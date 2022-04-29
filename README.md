@@ -1,4 +1,4 @@
-# 1. Gra Bombowe roboty
+## 1. Gra Bombowe roboty
 
 ### 1.1. Zasady gry
 
@@ -24,7 +24,7 @@ Stan gry przed rozpoczęciem rozgrywki będziemy nazywać `Lobby`.
 
 Na grę składają się trzy komponenty: serwer, klient, serwer obsługujący
 interfejs użytkownika.
-Należy zaimplementować serwer i klient.
+Należy zaimplementować serwer i klienta.
 Aplikację implementującą serwer obsługujący graficzny interfejs użytkownika
 (ang. *GUI*) dostarczamy.
 
@@ -41,7 +41,7 @@ komunikatów i poleceń są opisane poniżej.
 ### 1.3. Parametry wywołania programów
 
 Serwer:
-```
+```console
     -b, --bomb-timer <u16>
     -c, --players-count <u8>
     -d, --turn-duration <u64, milisekundy>
@@ -57,7 +57,7 @@ Serwer:
 ```
 
 Klient:
-```
+```console
     -d, --display-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
     -h, --help                                 Print help information
     -n, --player-name <String>
@@ -66,7 +66,7 @@ Klient:
 ```
 
 Interfejs graficzny:
-```
+```console
     -c, --client-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
     -h, --help                               Print help information
     -p, --port <u16>
@@ -82,34 +82,68 @@ Wystarczy zaimplementować rozpoznawanie krótkich (`-c`, `-x` itd.) parametrów
 
 Wymiana danych odbywa się po TCP. Przesyłane są dane binarne, zgodne z poniżej zdefiniowanymi
 formatami komunikatów. W komunikatach wszystkie liczby przesyłane są w sieciowej kolejności bajtów,
-a wszystkie napisy muszą być zakodowane w UTF-8 i mieć długość krótszą niż 256 znaków.
-
-Klient po podłączeniu się do serwera zaczyna obserwować rozgrywkę, jeżeli ta jest w toku.
-W przeciwnym razie może zgłosić chęć wzięcia w niej udziału, wysyłając komunikat `Join`.
+a wszystkie napisy muszą być zakodowane w UTF-8 i mieć długość krótszą niż 256 bajtów.
 
 Napisy (String) mają następującą reprezentację binarną:
-`[1 bajt określający długość napisu][bajty bez ostatniego bajtu zerowego]`
+`[1 bajt określający długość napisu w bajtach][bajty bez ostatniego bajtu zerowego]`.
+
+Listy są serializowane w postaci `[4 bajty długości listy][elementy listy]`.
+Mapy są serializowane w postaci `[4 bajty długości mapy][klucz][wartość][klucz][wartość]...`.
+
+Pola w strukturze serializowane są bezpośrednio po bajcie oznaczającym typ struktury.
+
+Należy wyłączyć algorytm Nagle'a (tzn. ustawić flagę TCP_NODELAY).
 
 ### 2.1. Komunikaty od klienta do serwera
 
-| Komunikat                         | Reprezentacja binarna      |
-|--------------------------------|-------------------------|
-| `Join(player_name: String)`       | `0[player_name]`           |
-| `PlaceBomb`                       | `1`                        |
-| `PlaceBlock`                      | `2`                        |
-| `Move(direction: Direction)`      | `3[direction]`             |
+```cpp
+enum ClientMessage {
+    [0] Join { name: String },
+    [1] PlaceBomb,
+    [2] PlaceBlock,
+    [3] Move { direction: Direction },
+}
+```
 
 Typ Direction ma następującą reprezentację binarną:
 
-| Direction | Reprezentacja binarna |
-|-----------|-----------------------|
-| `Up`      | `0`                   |
-| `Right`   | `1`                   |
-| `Down`    | `2`                   |
-| `Left`    | `3`                   |
+```cpp
+enum Direction {
+    [0] Up,
+    [1] Right,
+    [2] Down,
+    [3] Left,
+}
+```
+
+Wiadomość od klienta `Join(“Żółć!”)` zostanie zserializowana jako ciąg bajtów
+`[0, 9, 197, 187, 195, 179, 197, 130, 196, 135, 33]`, gdzie:
+
+```console
+0 - rodzaj wiadomości
+9 - długość napisu
+197, 187 - 'Ż'
+195, 179 - 'ó'
+197, 130 - 'ł'
+196, 135 - 'ć'
+33 - '!'
+```
+
+Natomiast wiadomość `Join(“👩🏼‍👩🏼‍👧🏼‍👦🏼🇵🇱”)` zostanie zserializowana jako ciąg bajtów
+`[0, 49, 240, 159, 145, 169, 240, 159, 143, 188, 226, 128, 141, 240, 159, 145, 169, 240, 159, 143, 188, 226, 128, 141, 240, 159, 145, 167, 240, 159, 143, 188, 226, 128, 141, 240, 159, 145, 166, 240, 159, 143, 188, 240, 159, 135, 181, 240, 159, 135, 177]`.
+
+Wiadomość `Move(Down)` zserializowana zostanie jako ciąg bajtów `[3, 2]`.
+
+
+
+Klient po podłączeniu się do serwera zaczyna obserwować rozgrywkę, jeżeli ta jest w toku.
+W przeciwnym razie może zgłosić chęć wzięcia w niej udziału, wysyłając komunikat `Join`. Serwer ignoruje komunikaty `Join` wysłane w trakcie rozgrywki. Serwer ignoruje również komunikaty typu innego niż `Join` w `Lobby`.
+
 
 ### 2.2. Komunikaty od serwera do klienta
 
+```cpp
+enum ServerMessage {
     [0] Hello {
         server_name: String,
         players_count: u8,
@@ -124,25 +158,22 @@ Typ Direction ma następującą reprezentację binarną:
         player: Player,
     },
     [2] GameStarted {
-        players: Map<PlayerId, Player>,
+            players: Map<PlayerId, Player>,
     },
     [3] Turn {
-        turn: u16,
-        events: List<Event>,
+            turn: u16,
+            events: List<Event>,
     },
     [4] GameEnded {
-        scores: Map<PlayerId, Score>,
+            scores: Map<PlayerId, Score>,
     },
-
-
-Listy są serializowane w postaci `[4 bajty długości listy][elementy listy]`.
-Mapy są serializowane w postaci `[4 bajty długości mapy][klucz][wartość][klucz][wartość]...`.
-
-Pola w strukturze serializowane są bezpośrednio po bajcie oznaczającym typ struktury.
-
-Zatem wiadomość od serwera typu `Turn`
-
+}
 ```
+
+
+Wiadomość od serwera typu `Turn`
+
+```cpp
 ServerMessage::Turn {
         turn: 44,
         events: [
@@ -163,7 +194,7 @@ ServerMessage::Turn {
 
 będzie miała następującą reprezentację binarną:
 
-```
+```console
 [3, 0, 44, 0, 0, 0, 3, 2, 3, 0, 2, 0, 4, 2, 4, 0, 3, 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 7]
 
 3 - rodzaj wiadomości od serwera (`Turn`)
@@ -199,10 +230,10 @@ Dostarczymy program do weryfikowania poprawności danych.
     Player: { name: String, address: String }
     Score: u32
 
-Pole `address` w strukturze `Player` może reprezentować zarówno adres IPv4 jak i adres IPv6.
+Pole `address` w strukturze `Player` może reprezentować zarówno adres IPv4, jak i adres IPv6.
 
 Liczba typu `Score` informuje o tym, ile razy robot danego gracza został zniszczony.
-
+    
 
 ### 2.4. Generator liczb losowych
 
@@ -238,7 +269,7 @@ Poniżej podajemy dwa przykładowe ciągi liczb 32-bitowego typu unsigned, któr
 
 ### 2.5. Stan gry
 
-Serwer jest "zarządcą" stanu gry, do klientów przesyła informacje o zdarzeniach. Klienci je agregują
+Serwer jest „zarządcą” stanu gry, do klientów przesyła informacje o zdarzeniach. Klienci je agregują
 i przesyłają zagregowany stan do interfejsu użytkownika. Interfejs nie przechowuje w ogóle żadnego stanu.
 
 Serwer powinien przechowywać następujące informacje:
@@ -269,7 +300,7 @@ a następnie wysyła komunikat `Turn` z informacją o aktualnym stanie gry. Nume
 Jeśli rozgrywka nie jest jeszcze rozpoczęta, to wysłanie przez klienta komunikatu `Join`
 powoduje dodanie go do listy graczy. Serwer następnie rozsyła do wszystkich klientów komunikat `AcceptedPlayer`.
 
-Graczom nadawane jest ID w kolejności podłączenia. Gracze rozpoznawani są po adresie IP i numerze portu.
+Graczom nadawane jest ID w kolejności podłączenia (tzn. odebrania komunikatu `Join` przez serwer). Gracze rozpoznawani są po adresie IP i numerze portu.
 Dwoje graczy może mieć taką samą nazwę.
 
 Odłączenie gracza w trakcie rozgrywki powoduje tylko tyle, że jego robot przestaje się ruszać.
@@ -283,7 +314,7 @@ jest wyspecyfikowane przy uruchomieniu serwera.
 
 Inicjacja stanu gry przebiega następująco:
 
-```
+```console
 nr_tury = 0
 zdarzenia = []
 
@@ -308,13 +339,13 @@ Zasady:
 
 - Nie ma ograniczenia na liczbę bloków i bomb.
 - Gracze nie mogą wchodzić na pole, które jest zablokowane. Mogą natomiast z niego zejść, jeśli znajdą się na nim,
-  wskutek zablokowania go lub "odrodzenia" się na nim.
+  wskutek zablokowania go lub „odrodzenia" się na nim.
 - Gracze nie mogą wychodzić poza planszę.
 - Wielu graczy może zajmować to samo pole.
 - Bomby mogą zajmować to samo pole.
 - Gracze mogą położyć bombę, nawet jeśli stoją na zablokowanym polu (czyli na jednym polu może być blok, wielu graczy i wiele bomb)
 
-```
+```console
 zdarzenia = []
 
 dla każdej bomby:
@@ -345,14 +376,14 @@ W wyniku eksplozji bomby zostają zniszczone wszystkie roboty w jej zasięgu ora
 Intuicyjnie oznacza to, że można się schować za blokiem, ale położenie bloku pod sobą nie chroni przed eksplozją.
 
 Przykłady:
-```
+```asm
 @ - blok
 A, B, C... - bomby
 1, 2, 3... - gracze
 x - eksplozja
 ```
 
-```
+```asm
 .@2..
 ..1..
 @@A.@
@@ -361,7 +392,7 @@ x - eksplozja
 ```
 
 Pola oznaczone jako eksplozja po wybuchu A z promieniem równym 2:
-```
+```asm
 .Bx..
 ..x..
 Bxxxx
@@ -382,13 +413,26 @@ to w danej turze jego robot nic nie robi.
 Jeśli w tym czasie gracz wyśle więcej niż jedną wiadomość,
 to pod uwagę brana jest tylko ostatnia.
 
+To serwer decyduje o tym, czy dany ruch jest dozwolony czy nie. Jeśli gracz stojący na krawędzi planszy wyśle komunikat, który spowodowałby wyjście robota poza planszę, to serwer komunikat ignoruje. Podobnie jeśli spróbuje wejść na zablokowane pole.
+
+### 2.10. Kończenie rozgrywki
+
+Po `game_length` turach serwer wysyła do wszystkich klientów wiadomość `GameEnded` i wraca do stanu `Lobby`. Klienci, którzy byli do tej pory graczami, przestają nimi być, ale oczywiście mogą się z powrotem zgłosić przy pomocy komunikatu `Join`. Wszystkie komunikaty otrzymane w czasie ostatniej tury rozgrywki są ignorowane.
+
+### 2.11. Błędy w komunikacji
+
+Co jeśli klient prześle komunikat o nieprawidłowym formacie? Czy należy wtedy uznać go za odłączonego? Tak, bo ponieważ protokół jest binarny i po napotkaniu jakichkolwiek nieprawidłowych danych nie da się dowiedzieć, od którego momentu dane z powrotem są prawidłowe, jedyne co można zrobić to odłączyć klienta.
+
+
 ## 3. Protokół komunikacyjny pomiędzy klientem a interfejsem użytkownika
 
-Komunikacja z interfejsem odbywa się po UDP przy użyciu komunikatów zakodowanych jako JSON.
+Komunikacja z interfejsem odbywa się po UDP przy użyciu komunikatów serializowanych jw.
 
 Klient wysyła do interfejsu graficznego następujące komunikaty:
 
-    Lobby {
+```cpp
+enum DrawMessage {
+    [0] Lobby {
         server_name: String,
         players_count: u8,
         size_x: u16,
@@ -396,9 +440,9 @@ Klient wysyła do interfejsu graficznego następujące komunikaty:
         game_length: u16,
         explosion_radius: u16,
         bomb_timer: u16,
-        players: List<(PlayerId, Player)>
+        players: Map<PlayerId, Player>
     },
-    Game {
+    [1] Game {
         server_name: String,
         size_x: u16,
         size_y: u16,
@@ -411,21 +455,41 @@ Klient wysyła do interfejsu graficznego następujące komunikaty:
         explosions: List<Position>,
         scores: Map<PlayerId, Score>,
     },
+}
+```
 
 Klient powinien wysłać taki komunikat po każdej zmianie stanu (tzn. otrzymaniu wiadomości `Turn` jeśli rozgrywka jest w
 toku lub `AcceptedPlayer` jeśli rozgrywka się nie toczy).
 
 Interfejs wysyła do klienta następujące komunikaty:
 
-    PlaceBomb,
-    PlaceBlock,
-    Move { direction: Direction },
+```
+enum InputMessage {
+    [0] PlaceBomb,
+    [1] PlaceBlock,
+    [2] Move { direction: Direction },
+}
+```
 
 Są one wysyłane za każdym razem, gdy gracz naciśnie odpowiedni przycisk.
 
-Można skorzystać z biblioteki [`json`](https://github.com/nlohmann/json).
+Można założyć, że komunikaty zmieszczą się w jednym datagramie UDP. Każdy komunikat wysyłany jest w osobnym datagramie.
 
 ## 4. Ustalenia dodatkowe
+
+Program klienta w przypadku błędu połączenia z serwerem gry lub interfejsem
+użytkownika powinien się zakończyć z kodem wyjścia 1, uprzednio wypisawszy
+zrozumiały komunikat na standardowe wyjście błędów.
+
+Program serwera powinien być odporny na sytuacje błędne, które dają szansę na
+kontynuowanie działania. Intencja jest taka, że serwer powinien móc być
+uruchomiony na stałe bez konieczności jego restartowania, np. w przypadku
+kłopotów komunikacyjnych, czasowej niedostępności sieci, zwykłych zmian jej
+konfiguracji itp.
+
+Serwer nie musi obsługiwać więcej niż 25 podłączonych klientów (graczy + obserwatorów) jednocześnie.
+Dodatkowi klienci ponad limit nie mogą jednak przeszkadzać wcześniej
+podłączonym.
 
 Programy powinny umożliwiać komunikację zarówno przy użyciu IPv4, jak i IPv6.
 
@@ -435,7 +499,7 @@ Rozwiązanie ma kompilować się i działać na serwerze students.
 
 Rozwiązania należy kompilować z flagami `-Wall -Wextra -O2`. Przy kompilowaniu z tymi flagami kompilator nie powinien wypisywać żadnych ostrzeżeń.
 
-Rozwiązania napisane w języku C++ powinny być kompilowane z flagą `-std=c++17`, a w języku C z flagą `-std=c11`.
+Rozwiązania napisane w języku C++ powinny być kompilowane z flagą `-std=c++20`, a w języku C z flagą `-std=c17`.
 
 Rozwiązanie powinno być odpowiednio sformatowane (można użyć np. `clang-format`).
 
@@ -443,6 +507,8 @@ Rozwiązanie powinno być odpowiednio sformatowane (można użyć np. `clang-for
 
 Jako rozwiązanie można oddać tylko klienta (część A) lub tylko serwer (część B),
 albo obie części.
+
+Termin oddawania części A to 23.05, a termin oddawania części B to 06.07.
 
 Jako rozwiązanie należy dostarczyć pliki źródłowe oraz plik `makefile`, które
 należy umieścić jako skompresowane archiwum w Moodle. Archiwum powinno zawierać
@@ -463,9 +529,9 @@ Za rozwiązanie części B zadania można dostać maksymalnie 15 punktów.
 Każda część zadania będzie testowana i oceniana osobno.
 Ocena każdej z części zadania będzie się składała z trzech składników:
 
-1. ocena wzrokowa i manualna działania programu (20%)
-2. testy automatyczne (50%)
-3. jakość kodu źródłowego (30%)
+  1. ocena wzrokowa i manualna działania programu (20%)
+  2. testy automatyczne (50%)
+  3. jakość kodu źródłowego (30%)
 
 ### 6.1 Ocena wzrokowa i manualna działania programu
 
@@ -476,21 +542,29 @@ Ocena każdej z części zadania będzie się składała z trzech składników:
 
 Testy będą obejmowały m.in.:
 - bardzo proste scenariusze testowe (czy podłączenie gracza do serwera powoduje wysłanie odpowiedniego komunikatu do klientów, czy otrzymanie wiadomości od interfejsu powoduje wysłanie wiadomości do serwera, czy otrzymanie wiadomości od serwera powoduje wysłanie wiadomości do klienta itd., czy programy prawidłowo resolvują nazwy domenowe (np. localhost), czy można się połączyć zarówno po IPv4 jak i IPv6)
-- proste scenariusze testowe (symulacja krótkiej rozgrywki z jednym graczem, czy generowanie planszy odbywa się zgodnie z powyższym opisem; czy wybuch bomby jest prawidłowo obliczany)
-- złożone scenariusze testowe (symulacja długiej rozgrywki z wieloma graczami)
+- proste scenariusze testowe (symulacja krótkiej rozgrywki z jednym graczem, czy generowanie planszy odbywa się zgodnie z powyższym opisem; czy wybuch bomby jest prawidłowo obliczany, czy prawidłowo obsługiwane są znaki spoza zakresu ASCII)
+- złożone scenariusze testowe (symulacja kilku rozgrywek z wieloma graczami)
 
 ### 6.3 Jakość kodu źródłowego
 
 - absolutne podstawy: kod powinien być jednolicie sformatowany (najlepiej użyć do tego clang-format lub formatera wbudowanego w cliona), nie wyciekać pamięci, po skompilowaniu z parametrami `-Wall -Wextra` nie powinno być żadnych ostrzeżeń. Dodatkowo można sprawdzić sobie program przy użyciu lintera `clang-tidy`
 - kod powinien być sensownie podzielony na funkcje, nazwy funkcji i zmiennych powinny być znaczące (a nie np. a, b, x, y, temp) i w jednym języku
 - komentarze powinny być w jednym języku
-- “magiczne stałe” powinny być ponazywane
-- [“Parse, don’t validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)
+- „magiczne stałe” powinny być ponazywane
+- [„Parse, don’t validate”](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) 
 
 
-Prowadzący powinni zrobić code review wszystkim chętnym studentom i studentkom, którzy i które zgłoszą się odpowiednio wcześniej.
+## 7. FAQ
 
-
-
+- P: Klient może wysłać do serwera bardzo dużo ruchów (bo np. gracz wciska szybko różne strzałki), zatem nawet jak na bieżąco odczytujemy dane z socketu, to po upływie tych turn-duration milisekund, w sockecie wciąż mogą zalegać ruchy. Czy przechodzą one na następną turę? Dla przykładu, robię ruchy LPDLLPDGGLPDG, więc też takie trafią do socketu po stronie serwera, i przed upływem turn-duration ms, serwer przetworzył LPDL, więc przyjmuejmy, że w tej turze gracz robi ruch L. Czy pozostałe ruchy zalegające w sockecie (LPDGGLPDG) przechodzą na następną turę?
+- O: Możemy założyć, że zależy to od implementującego, bo testy automatyczne będziemy uruchamiać z dostatecznie długimi turami (rzędu 1s), żeby to się na pewno nie zdarzyło
+- P: Jak rozumiem, gra się zaczyna po tym jak serwer dostanie players-count komunikatów Join. Co jeśli przyjdzie więcej komunikatów Join? Mamy je zignorować?
+- O: Tak, serwer ignoruje komunikaty Join w momencie, gdy rozgrywka jest w trakcie
+- P: Odłączanie graczy rozpoznajemy po tym, że read/write z socketu TCP zwróci 0?
+- O: Tak
+- P: Kiedy mamy zapomnieć o istnieniu danego klienta? Jeśli dobrze rozumiem, to jeśli obserwator (czyli ktoś, kto nawiązał połączenie TCP z serwerem, ale nie wysłał jeszcze komunikatu Join) się odłączy to możemy zapomnieć o nim. Jeśli gracz się odłączy to ślad po nim (tj. pozycja robota itp.) istnieje do końca obecnej gry, ale po jej zakończeniu, możemy o nim zapomnieć?
+- O: Dokładnie tak
+- P: Jeśli gra się jeszcze nie rozpoczęła i podłączy się nowy klient, to jak rozumiem, należy wysłać do niego komunikat Hello i serię komunikatów AcceptedPlayer, by poinformować o tym jacy są obecnie gracze w Lobby. Jeśli w odpowiedzi na to, klient prześle Join to należy do wszystkich obserwatorów i graczy wysłać AcceptedPlayer, żeby wszyscy się dowiedzieli o nowym graczu. Dobrze rozumiem?
+- O: Tak właśnie
 
 

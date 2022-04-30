@@ -6,12 +6,16 @@
 #include <cstdint>
 #include <cstring>
 #include <sys/types.h>
+#include <set>
+#include <list>
 
 using std::cerr;
 using std::endl;
 using std::string;
 using std::vector;
 using std::map;
+using std::set;
+using std::list;
 
 #define MINIMAL_PARAMS_NUMBER 11
 #define BUFFER_SIZE 65507
@@ -44,7 +48,34 @@ struct Position {
 	uint16_t x;
 	uint16_t y;
 
-	Position(uint16_t x, uint16_t y): x(x), y(y) {}
+	Position(uint16_t x, uint16_t y) : x(x), y(y) {}
+};
+
+class Event {
+};
+
+class BombPlaced : public Event {
+public:
+	uint32_t bomb_id;
+	Position position;
+};
+
+class BombExploded : public Event {
+public:
+	uint32_t bomb_id;
+	list<uint8_t> robots_destroyed;
+	list<Position> blocks_destroyed;
+};
+
+class PlayerMoved : public Event {
+public:
+	uint8_t player_id;
+	Position position;
+};
+
+class BlockPlaced : public Event {
+public:
+	Position position;
 };
 
 class Parameters {
@@ -71,9 +102,9 @@ public:
 
 private:
 	enum wrong_parameters {
-		TOO_FEW_PARAMETERS,
 		WRONG_PARAMETER,
 		MISSING_PARAMETER,
+		UNKNOWN_FLAG,
 	};
 
 	void exit_program(enum wrong_parameters) {
@@ -85,38 +116,73 @@ private:
 		cerr << "Usage: " << argv[0] << expected << endl;
 	}
 
-	void parse_flag(char flag) {
-
-	}
-
 	void check_parameters() {
 		char flags_arr[12] = {'b', 'c', 'd', 'e', 'h', 'k', 'l', 'n', 'p',
 		                      's', 'x', 'y'};
+
 		map<char, bool> flag_occured;
 		for (char flag: flags_arr) {
 			flag_occured.insert({flag, false});
 		}
 
-		if (argc < MINIMAL_PARAMS_NUMBER)
-			exit_program(TOO_FEW_PARAMETERS);
 
 		const char *flags = "-b:c:d:e:h:k:l:n:p:s:x:y";
 		int opt;
 		while ((opt = getopt(argc, argv, flags)) != -1) {
-			parse_flag((char) opt);
+			size_t value = strtoul(optarg, nullptr, 10);
+//			if (value == 0) {
+//				exit_program(WRONG_PARAMETER);
+//			}
+			switch (opt) {
+				case 'b':
+					bomb_timer = value;
+					break;
+				case 'c':
+					players_count = value;
+					break;
+				case 'd':
+					turn_duration = value;
+					break;
+				case 'e':
+					explosion_radius = value;
+					break;
+				case 'h':
+					help = true;
+				case 'k':
+					initial_blocks = value;
+					break;
+				case 'l':
+					game_length = value;
+					break;
+				case 'n':
+					server_name = optarg; //może trzeba skopiować
+					break;
+				case 'p':
+					port = value;
+					break;
+				case 's':
+					seed = value;
+					break;
+				case 'x':
+					size_x = value;
+					break;
+				case 'y':
+					size_y = value;
+					break;
+				default:
+					exit_program(UNKNOWN_FLAG);
+			}
 			flag_occured.at((char) opt) = true;
 		}
 
 		for (auto x: flag_occured) {
-			if (!x.second)
+			if (!x.second && x.first != 's')
 				exit_program(MISSING_PARAMETER);
 		}
 	}
 };
 
-// Class for operations on buffer, mostly converting data to proper format
 class Buffer {
-
 private:
 	template<typename T>
 	T convert_to_send(T number) {
@@ -160,6 +226,43 @@ private:
 		send_index += size;
 	}
 
+	void insert(Position &position) {
+		uint16_t x_to_send = convert_to_send(position.x);
+		uint16_t y_to_send = convert_to_send(position.y);
+		memcpy(buffer + send_index, &x_to_send, sizeof(x_to_send));
+		send_index += sizeof(x_to_send);
+		memcpy(buffer + send_index, &y_to_send, sizeof(y_to_send));
+		send_index += sizeof(x_to_send);
+	}
+
+	template<typename T> //todo ograniczenie na T, że musi być primitive
+	void insert(list<T> &list) {
+		insert((uint32_t) list.size());
+		for(T &list_element : list) {
+			insert(list_element);
+		}
+	}
+
+	void insert(BombPlaced &e) {
+		insert(e.bomb_id);
+		insert(e.position);
+	}
+
+	void insert(BombExploded &e){
+		insert(e.bomb_id);
+		insert(e.robots_destroyed);
+		insert(e.blocks_destroyed);
+	}
+
+	void insert(PlayerMoved &e) {
+		insert(e.player_id);
+		insert(e.position);
+	}
+
+	void insert(BlockPlaced &e) {
+		insert(e.position);
+	}
+
 	template<typename T>
 	void receive_number(T &number) {
 		int size = sizeof(T);
@@ -179,7 +282,13 @@ private:
 
 public:
 
+//	void insert_turn() {
+//		reset_send_index();
+//
+//	}
+
 	string receive_join() {
+		reset_read_index();
 		string name;
 		uint8_t name_size;
 		receive_number(name_size);
@@ -188,10 +297,10 @@ public:
 	}
 
 	Direction receive_move() {
+		reset_read_index();
 		uint8_t direction;
 		receive_number(direction);
 		return (Direction) direction;
-		//todo sprawdzić działa
 	}
 
 	size_t get_size() const { return send_index; }
@@ -201,25 +310,64 @@ public:
 	char *get() { return buffer; }
 
 private:
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_SIZE]{};
 	size_t send_index{0};
 	size_t read_index{1};
 };
 
+
+struct Bomb {
+	time_t explosion_time;
+	Position position;
+};
+
+class Game {
+	int round_number{0};
+	list<Event> events;
+	set<Bomb> bombs;
+	set<Position> blocks;
+
+
+};
+
 class Server {
 private:
-	Parameters parameters;
-	Random random;
 	enum game_state {
 		lobby_state,
 		gameplay_state,
 	};
+	Game game;
 
 public:
 	explicit Server(Parameters &p) : parameters(p), random(parameters.seed) {}
 
-	void run() {}
+	void handle_received_message() {
+		string new_player_name;
+		switch ((int) buffer.get_message_id()) {
+			case 0:
+				new_player_name = buffer.receive_join();
+				//todo parse join
+				break;
+			case 1:
+				//todo placeBomb
+				break;
+			case 2:
+				//todo place_block
+				break;
+			case 3:
+				Direction direction = buffer.receive_move();
+				//todo move
+		}
+	}
 
+	void run() {
+
+	}
+
+private:
+	Parameters parameters;
+	Random random;
+	Buffer buffer;
 };
 
 

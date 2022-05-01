@@ -31,6 +31,16 @@ struct Position {
 	uint16_t y;
 
 	Position(uint16_t x, uint16_t y) : x(x), y(y) {}
+
+	bool operator==(const Position &rhs) const {
+		return x == rhs.x &&
+		       y == rhs.y;
+	}
+
+	bool operator!=(const Position &rhs) const {
+		return !(x == rhs.x &&
+		       y == rhs.y);
+	}
 };
 
 class Bomb {
@@ -53,6 +63,10 @@ public:
 
 	bomb_id_t get_id() {
 		return bomb_id;
+	}
+
+	Position get_position() {
+		return position;
 	}
 };
 

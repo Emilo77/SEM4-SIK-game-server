@@ -13,8 +13,8 @@ struct Player {
 	std::string name;
 	std::string address;
 
-
 	void join_game(player_id_t new_id) {
+		currently_dead = false;
 		score = 0;
 		id = new_id;
 	}
@@ -38,17 +38,18 @@ public:
 
 	bool is_alive() { return !currently_dead; }
 
-//	bool operator<(const Player &rhs) const {
-//		return id < rhs.id;
-//	}
-
-
+	bool is_on_exploded_field(Position &exploded) {
+		return position == exploded;
+	}
 };
 
 struct Field {
+private:
 	bool is_block{false};
 public:
 	explicit Field() = default;
+
+	bool is_solid() { return is_block; }
 
 	void become_solid() { is_block = true; }
 
@@ -70,18 +71,26 @@ public:
 		}
 	}
 
+	bool is_valid(Position &position) {
+		return position.x >= 0 && position.x < parameters.size_x &&
+		       position.y >= 0 && position.y < parameters.size_y;
+	}
+
+	Position random_position() {
+		uint16_t x = random.generate() % parameters.size_x;
+		uint16_t y = random.generate() % parameters.size_y;
+		return {x, y};
+	}
+
 	void
 	initialize() {
 		for (auto &player: currently_playing) {
-			uint16_t x = random.generate() % parameters.size_x;
-			uint16_t y = random.generate() % parameters.size_y;
+			player.second.set_position(random_position());
 			//todo dodaj zdarzenie PlayerMoved
-			player.second.set_position({x, y});
 		}
 		for (int i = 0; i < parameters.initial_blocks; i++) {
-			uint16_t x = random.generate() % parameters.size_x;
-			uint16_t y = random.generate() % parameters.size_y;
-			fields[x][y].become_solid();
+			Position new_position = random_position();
+			fields[new_position.x][new_position.y].become_solid();
 			//todo dodaj zdarzenie BlockPlaced
 		}
 	}
@@ -92,17 +101,75 @@ public:
 		}
 	}
 
-	void explode(Bomb &bomb) {
+	void explode_direction(Bomb &bomb, Direction direction,
+	                       std::vector<Position>
+	                       &positions_to_explode) {
+		Position bomb_position = bomb.get_position();
+		uint16_t radius = parameters.explosion_radius;
+		int horizontal_shift = 0;
+		int vertical_shift = 0;
 
+		switch (direction) {
+			case Up:
+				vertical_shift = 1;
+				break;
+			case Right:
+				horizontal_shift = 1;
+				break;
+			case Down:
+				vertical_shift = -1;
+				break;
+			case Left:
+				horizontal_shift = -1;
+				break;
+		}
+
+		for (int i = 1; i <= radius; i++) {
+			Position pos(bomb_position.x + i * horizontal_shift,
+			             bomb_position.y + i * vertical_shift);
+			if (is_valid(pos)) {
+				positions_to_explode.push_back(pos);
+				if (fields[pos.x][pos.y].is_solid()) {
+					break;
+				}
+				// break;
+			}
+		}
+	}
+
+	void explode(Bomb &bomb) {
+		std::vector<Position> positions_to_explode;
+		Position bomb_position = bomb.get_position();
+
+		positions_to_explode.push_back(bomb_position);
+		if (!fields[bomb_position.x][bomb_position.y].is_solid()) {
+			// jeżeli bomba wybucha na solidnym bloku, to rozsadza tylko jego
+			// (może trzeba będzie to zmienić, dopytać się)
+			explode_direction(bomb, Up, positions_to_explode);
+			explode_direction(bomb, Right, positions_to_explode);
+			explode_direction(bomb, Down, positions_to_explode);
+			explode_direction(bomb, Left, positions_to_explode);
+		}
+
+		for(auto &exploded_position : positions_to_explode) {
+			fields[exploded_position.x][exploded_position.y].become_air();
+			for (auto &element: currently_playing) {
+				Player &player = element.second;
+				if (player.is_on_exploded_field(exploded_position)) {
+					player.commit_suicide();
+				}
+			}
+		}
 	}
 
 	void activate_bombs() {
 		std::vector<Bomb> bombs_to_remove;
-		for (auto &bomb: bombs) {
-			if (bomb.second.will_explode()) {
-				explode(bomb.second);
+		for (auto &element: bombs) {
+			Bomb &bomb = element.second;
+			if (bomb.will_explode()) {
+				explode(bomb);
 				//todo dodaj zdarzenie BombExploded
-				bombs_to_remove.push_back(bomb.second);
+				bombs_to_remove.push_back(bomb);
 			}
 		}
 		for (auto bomb: bombs_to_remove) { //może tutaj referencja
@@ -118,9 +185,7 @@ public:
 				// jeśli ruch legalny, dodaj zdarzenie
 
 			} else {
-				uint16_t x = random.generate() % parameters.size_x;
-				uint16_t y = random.generate() % parameters.size_y;
-				player.revive({x, y});
+				player.revive(random_position());
 				//todo zdarzenie 'PlayerMoved'
 			}
 		}
@@ -189,9 +254,6 @@ private:
 	game_state state;
 	int current_round;
 	player_id_t current_player_id;
-	//	std::list<Event> events;
-	//	std::set<Bomb> bombs;
-	//	std::set<Position> blocks;
 };
 
 

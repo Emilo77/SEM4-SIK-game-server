@@ -5,7 +5,7 @@ private:
 	Game game;
 
 public:
-	explicit Server(Parameters &p) : parameters(p), random(parameters.seed) {}
+	explicit Server(Game &game): game(game) {}
 
 	void handle_received_message() {
 		string new_player_name;
@@ -31,16 +31,14 @@ public:
 	}
 
 private:
-	Parameters parameters;
-	Random random;
 	Buffer buffer;
 };
 
 
 int main(int argc, char *argv[]) {
-
 	Parameters parameters(argc, argv);
-	Server server(parameters);
+	Game game(parameters);
+	Server server(game);
 	server.run();
 
 	return 0;

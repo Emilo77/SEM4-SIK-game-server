@@ -5,9 +5,11 @@
 #include <string>
 #include <list>
 
-struct Random {
-	uint32_t random;
+using bomb_id_t = uint32_t;
 
+class Random {
+	uint32_t random;
+public:
 	explicit Random(uint32_t seed) : random(seed) {}
 
 	uint32_t generate() {
@@ -24,11 +26,6 @@ enum Direction {
 	Left = 3,
 };
 
-struct Player {
-	std::string name;
-	std::string address;
-};
-
 struct Position {
 	uint16_t x;
 	uint16_t y;
@@ -36,9 +33,27 @@ struct Position {
 	Position(uint16_t x, uint16_t y) : x(x), y(y) {}
 };
 
-struct Bomb {
-	time_t explosion_time;
+class Bomb {
+	uint32_t bomb_id;
+	uint16_t timer;
 	Position position;
+
+public:
+	bool operator<(const Bomb &rhs) const {
+		return bomb_id < rhs.bomb_id;
+	}
+
+	void tic() {
+		timer--;
+	}
+
+	bool will_explode() {
+		return timer == 0;
+	}
+
+	bomb_id_t get_id() {
+		return bomb_id;
+	}
 };
 
 class Event {

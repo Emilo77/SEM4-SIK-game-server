@@ -31,6 +31,8 @@ public:
 
 	player_id_t get_id() { return id; }
 
+	Position get_position() { return position; }
+
 	void set_position(Position new_position) { position = new_position; }
 
 	void commit_suicide() { currently_dead = true; }
@@ -108,27 +110,11 @@ public:
 	void explode_direction(Bomb &bomb, Direction direction,
 	                       std::vector<Position>
 	                       &positions_to_explode) {
-		int horizontal_shift = 0;
-		int vertical_shift = 0;
-
-		switch (direction) {
-			case Up:
-				vertical_shift = 1;
-				break;
-			case Right:
-				horizontal_shift = 1;
-				break;
-			case Down:
-				vertical_shift = -1;
-				break;
-			case Left:
-				horizontal_shift = -1;
-				break;
-		}
+		std::pair<int, int> shift = direction_to_pair(direction);
 
 		for (int i = 1; i <= parameters.explosion_radius; i++) {
-			Position pos(bomb.get_position().x + i * horizontal_shift,
-			             bomb.get_position().y + i * vertical_shift);
+			Position pos(bomb.get_position().x + i * shift.first,
+			             bomb.get_position().y + i * shift.second);
 			if (is_valid(pos)) {
 				positions_to_explode.push_back(pos);
 				if (fields[pos.x][pos.y].is_solid()) {
@@ -162,6 +148,33 @@ public:
 				}
 			}
 		}
+	}
+
+	void place_bomb(Position position) {
+		//new bomb_id
+		//dodanie bomby do mapy
+		//todo dodaj event 'BombPlaced'
+	}
+
+	void place_block(Position position) {
+		fields[position.x][position.y].become_solid();
+		//todo dodaj event 'BlockPlaced'
+	}
+
+	void move_player(Player &player, Direction direction) {
+		Position new_position = player.get_position();
+		std::pair<int, int> shift = direction_to_pair(direction);
+
+		new_position.x += shift.first;
+		new_position.y += shift.second;
+		//może być sytuacja, że z 0 przejdzie na uint16_t max
+
+		if (!is_valid(new_position) ||
+		    fields[new_position.x][new_position.y].is_solid()) {
+			return; //niemożliwy ruch, ignoruj
+		}
+		player.set_position(new_position);
+		//todo dodaj event 'PlayerMoved'
 	}
 
 	void activate_bombs() {

@@ -74,6 +74,21 @@ struct Position {
 	}
 };
 
+std::pair<int,int> direction_to_pair(Direction &direction) {
+	switch(direction) {
+		case Up:
+			return {0, 1};
+		case Right:
+			return {1, 0};
+		case Down:
+			return {0, -1};
+		case Left:
+			return {-1, 0};
+		case InvalidDirection:
+			return {69, 69}; //todo potem zmienić
+	}
+}
+
 class Bomb {
 	uint32_t bomb_id;
 	uint16_t timer;

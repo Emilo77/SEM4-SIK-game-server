@@ -145,7 +145,6 @@ void Buffer::insert_game_ended(std::map<player_id_t, score_t> &map) {
 	}
 }
 
-
 //jeżeli niepoprawna instrukcja, zwraca pusty string
 string Buffer::receive_join(size_t received_size) {
 	reset_read_index();
@@ -169,5 +168,5 @@ Direction Buffer::receive_move() {
 	return (Direction) direction;
 }
 
-
-
+//todo: stworzyć listę eventów i je tam dodawać
+//todo: rozwiązać problem z dziedziczeniem po klasie Event

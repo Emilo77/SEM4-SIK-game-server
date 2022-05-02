@@ -4,6 +4,8 @@
 #define BUFFER_SIZE 65507
 
 #include "Utils.h"
+#include "Parameters.h"
+#include "Game.h"
 
 class Buffer {
 private:
@@ -33,6 +35,9 @@ private:
 
 	void insert(BlockPlaced &e);
 
+	//insert player_id i Player
+	void insert(Player &player);
+
 	template<typename T>
 	void receive_number(T &number);
 
@@ -43,9 +48,18 @@ private:
 
 	void reset_send_index() { send_index = 0; }
 
+
 public:
 
-	void insert_turn();
+	void insert_hello(Parameters &parameters);
+
+	void insert_accepted_player(Player &player);
+
+	void insert_game_started(std::map<player_id_t, Player> &map);
+
+	void insert_turn(uint16_t turn_number, std::list<Event> &events);
+
+	void insert_game_ended(std::map<player_id_t, score_t> &map);
 
 	std::string receive_join(size_t received_size);
 

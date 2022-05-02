@@ -65,6 +65,14 @@ void Buffer::insert(std::list<T> &list) {
 	}
 }
 
+void Buffer::insert(Player &player) {
+	insert(player.get_id());
+	insert((uint8_t) player.name.size());
+	insert(player.name);
+	insert((uint8_t) player.address.size());
+	insert(player.address);
+}
+
 void Buffer::insert(BombPlaced &e) {
 	insert(e.bomb_id);
 	insert(e.position);
@@ -97,10 +105,46 @@ void Buffer::receive_string(string &str, size_t str_size) {
 	str = {buffer + read_index, str_size};
 }
 
-
-void Buffer::insert_turn() {
-
+void Buffer::insert_hello(Parameters &parameters) {
+	reset_read_index();
+	insert((uint8_t) parameters.server_name.size());
+	insert(parameters.server_name);
+	insert(parameters.players_count);
+	insert(parameters.size_x);
+	insert(parameters.size_y);
+	insert(parameters.game_length);
+	insert(parameters.explosion_radius);
+	insert(parameters.bomb_timer);
 }
+
+void Buffer::insert_accepted_player(Player &player) {
+	reset_read_index();
+	insert(player);
+}
+
+void Buffer::insert_game_started(std::map<player_id_t, Player> &map) {
+	reset_read_index();
+	insert((uint32_t) map.size());
+	for(auto &element: map) {
+		insert(element.second);
+	}
+}
+
+void Buffer::insert_turn(uint16_t turn_number, std::list<Event> &events) {
+	reset_read_index();
+	insert(turn_number);
+	//todo wstawić listę
+}
+
+void Buffer::insert_game_ended(std::map<player_id_t, score_t> &map) {
+	reset_read_index();
+	insert((uint32_t) map.size());
+	for(auto &element: map) {
+		insert(element.first);
+		insert(element.second);
+	}
+}
+
 
 //jeżeli niepoprawna instrukcja, zwraca pusty string
 string Buffer::receive_join(size_t received_size) {
@@ -119,6 +163,11 @@ Direction Buffer::receive_move() {
 	reset_read_index();
 	uint8_t direction;
 	receive_number(direction);
+	if (direction > 3) {
+		return Direction::InvalidDirection;
+	}
 	return (Direction) direction;
 }
+
+
 

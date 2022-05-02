@@ -8,6 +8,7 @@
 #include <vector>
 
 using player_id_t = uint8_t;
+using score_t = uint32_t;
 
 struct Player {
 	std::string name;
@@ -27,6 +28,9 @@ private:
 	bool currently_dead;
 
 public:
+
+	player_id_t get_id() { return id; }
+
 	void set_position(Position new_position) { position = new_position; }
 
 	void commit_suicide() { currently_dead = true; }

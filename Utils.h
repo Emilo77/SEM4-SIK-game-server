@@ -26,14 +26,15 @@ enum Direction {
 	Right = 1,
 	Down = 2,
 	Left = 3,
+	InvalidDirection = 4,
 };
 
 enum ClientMessage {
-	Join = 1,
-	PlaceBomb = 2,
-	PlaceBlock = 3,
-	Move = 4,
-	Invalid = 0,
+	Join = 0,
+	PlaceBomb = 1,
+	PlaceBlock = 2,
+	Move = 3,
+	Invalid = 4,
 	// przy castowaniu na enum, dowolna inna wartość niż <1,4>
 	// stanie siże zerem, czyli Invalid
 };

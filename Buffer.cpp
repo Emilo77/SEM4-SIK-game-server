@@ -102,12 +102,15 @@ void Buffer::insert_turn() {
 
 }
 
-
-string Buffer::receive_join() {
+//jeżeli niepoprawna instrukcja, zwraca pusty string
+string Buffer::receive_join(size_t received_size) {
 	reset_read_index();
 	string name;
 	uint8_t name_size;
 	receive_number(name_size);
+	if (name_size != received_size - 2) { //niepoprawna instrukcja
+		return name;
+	}
 	receive_string(name, name_size);
 	return name;
 }

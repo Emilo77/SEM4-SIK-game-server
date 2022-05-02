@@ -104,8 +104,6 @@ public:
 	void explode_direction(Bomb &bomb, Direction direction,
 	                       std::vector<Position>
 	                       &positions_to_explode) {
-		Position bomb_position = bomb.get_position();
-		uint16_t radius = parameters.explosion_radius;
 		int horizontal_shift = 0;
 		int vertical_shift = 0;
 
@@ -124,9 +122,9 @@ public:
 				break;
 		}
 
-		for (int i = 1; i <= radius; i++) {
-			Position pos(bomb_position.x + i * horizontal_shift,
-			             bomb_position.y + i * vertical_shift);
+		for (int i = 1; i <= parameters.explosion_radius; i++) {
+			Position pos(bomb.get_position().x + i * horizontal_shift,
+			             bomb.get_position().y + i * vertical_shift);
 			if (is_valid(pos)) {
 				positions_to_explode.push_back(pos);
 				if (fields[pos.x][pos.y].is_solid()) {
@@ -144,14 +142,14 @@ public:
 		positions_to_explode.push_back(bomb_position);
 		if (!fields[bomb_position.x][bomb_position.y].is_solid()) {
 			// jeżeli bomba wybucha na solidnym bloku, to rozsadza tylko jego
-			// (może trzeba będzie to zmienić, dopytać się)
+			// (może trzeba będzie usunąć tego ifa, dopytać się)
 			explode_direction(bomb, Up, positions_to_explode);
 			explode_direction(bomb, Right, positions_to_explode);
 			explode_direction(bomb, Down, positions_to_explode);
 			explode_direction(bomb, Left, positions_to_explode);
 		}
 
-		for(auto &exploded_position : positions_to_explode) {
+		for (auto &exploded_position: positions_to_explode) {
 			fields[exploded_position.x][exploded_position.y].become_air();
 			for (auto &element: currently_playing) {
 				Player &player = element.second;

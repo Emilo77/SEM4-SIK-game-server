@@ -47,7 +47,7 @@ public:
 
 	void insert_turn();
 
-	std::string receive_join();
+	std::string receive_join(size_t received_size);
 
 	Direction receive_move();
 

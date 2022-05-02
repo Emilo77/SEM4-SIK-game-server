@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <list>
+#include <bits/sigaction.h>
+#include <csignal>
 
 using bomb_id_t = uint32_t;
 
@@ -26,6 +28,34 @@ enum Direction {
 	Left = 3,
 };
 
+enum ClientMessage {
+	Join = 1,
+	PlaceBomb = 2,
+	PlaceBlock = 3,
+	Move = 4,
+	Invalid = 0,
+	// przy castowaniu na enum, dowolna inna wartość niż <1,4>
+	// stanie siże zerem, czyli Invalid
+};
+
+struct ClientMessageStruct {
+	ClientMessage message;
+	std::string name{};
+	Direction direction{};
+
+	ClientMessageStruct(ClientMessage message)
+			: message(message) {}
+
+	ClientMessageStruct(ClientMessage message, std::string &name)
+			: message(message),
+			  name(name) {}
+
+	ClientMessageStruct(ClientMessage message, Direction direction)
+			: message(message),
+			  direction(direction) {}
+};
+
+
 struct Position {
 	uint16_t x;
 	uint16_t y;
@@ -39,7 +69,7 @@ struct Position {
 
 	bool operator!=(const Position &rhs) const {
 		return !(x == rhs.x &&
-		       y == rhs.y);
+		         y == rhs.y);
 	}
 };
 
@@ -96,6 +126,5 @@ class BlockPlaced : public Event {
 public:
 	Position position;
 };
-
 
 #endif //ZADANIE02_EVENT_H

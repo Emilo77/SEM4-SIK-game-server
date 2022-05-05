@@ -41,7 +41,7 @@ komunikatów i poleceń są opisane poniżej.
 ### 1.3. Parametry wywołania programów
 
 Serwer:
-```
+```console
     -b, --bomb-timer <u16>
     -c, --players-count <u8>
     -d, --turn-duration <u64, milisekundy>
@@ -57,7 +57,7 @@ Serwer:
 ```
 
 Klient:
-```
+```console
     -d, --display-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
     -h, --help                                 Print help information
     -n, --player-name <String>
@@ -96,7 +96,7 @@ Należy wyłączyć algorytm Nagle'a (tzn. ustawić flagę TCP_NODELAY).
 
 ### 2.1. Komunikaty od klienta do serwera
 
-```
+```cpp
 enum ClientMessage {
     [0] Join { name: String },
     [1] PlaceBomb,
@@ -107,7 +107,7 @@ enum ClientMessage {
 
 Typ Direction ma następującą reprezentację binarną:
 
-```
+```cpp
 enum Direction {
     [0] Up,
     [1] Right,
@@ -119,7 +119,7 @@ enum Direction {
 Wiadomość od klienta `Join(“Żółć!”)` zostanie zserializowana jako ciąg bajtów
 `[0, 9, 197, 187, 195, 179, 197, 130, 196, 135, 33]`, gdzie:
 
-```
+```console
 0 - rodzaj wiadomości
 9 - długość napisu
 197, 187 - 'Ż'
@@ -144,7 +144,7 @@ Serwer ignoruje komunikaty `Join` wysłane w trakcie rozgrywki. Serwer ignoruje 
 
 ### 2.2. Komunikaty od serwera do klienta
 
-```
+```cpp
 enum ServerMessage {
     [0] Hello {
         server_name: String,
@@ -175,7 +175,7 @@ enum ServerMessage {
 
 Wiadomość od serwera typu `Turn`
 
-```
+```cpp
 ServerMessage::Turn {
         turn: 44,
         events: [
@@ -196,7 +196,7 @@ ServerMessage::Turn {
 
 będzie miała następującą reprezentację binarną:
 
-```
+```console
 [3, 0, 44, 0, 0, 0, 3, 2, 3, 0, 2, 0, 4, 2, 4, 0, 3, 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 7]
 
 3 - rodzaj wiadomości od serwera (`Turn`)
@@ -318,7 +318,7 @@ jest wyspecyfikowane przy uruchomieniu serwera.
 
 Inicjacja stanu gry przebiega następująco:
 
-```
+```console
 nr_tury = 0
 zdarzenia = []
 
@@ -350,7 +350,7 @@ Zasady:
 - Gracze mogą położyć bombę, nawet jeśli stoją na zablokowanym polu (czyli na jednym polu może być blok, wielu graczy i wiele bomb)
 - Na danym polu może być maksymalnie jeden blok
 
-```
+```console
 zdarzenia = []
 
 dla każdej bomby:
@@ -381,14 +381,14 @@ W wyniku eksplozji bomby zostają zniszczone wszystkie roboty w jej zasięgu ora
 Intuicyjnie oznacza to, że można się schować za blokiem, ale położenie bloku pod sobą nie chroni przed eksplozją.
 
 Przykłady:
-```
+```asm
 @ - blok
 A, B, C... - bomby
 1, 2, 3... - gracze
 x - eksplozja
 ```
 
-```
+```asm
 .@2..
 ..1..
 @@A.@
@@ -397,7 +397,7 @@ x - eksplozja
 ```
 
 Pola oznaczone jako eksplozja po wybuchu A z promieniem równym 2:
-```
+```asm
 .Bx..
 ..x..
 Bxxxx
@@ -435,7 +435,7 @@ Komunikacja z interfejsem odbywa się po UDP przy użyciu komunikatów serializo
 
 Klient wysyła do interfejsu graficznego następujące komunikaty:
 
-```
+```cpp
 enum DrawMessage {
     [0] Lobby {
         server_name: String,
@@ -468,7 +468,7 @@ toku lub `AcceptedPlayer` jeśli rozgrywka się nie toczy).
 
 Interfejs wysyła do klienta następujące komunikaty:
 
-```
+```cpp
 enum InputMessage {
     [0] PlaceBomb,
     [1] PlaceBlock,

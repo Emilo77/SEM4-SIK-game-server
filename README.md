@@ -41,7 +41,7 @@ komunikatów i poleceń są opisane poniżej.
 ### 1.3. Parametry wywołania programów
 
 Serwer:
-```console
+```
     -b, --bomb-timer <u16>
     -c, --players-count <u8>
     -d, --turn-duration <u64, milisekundy>
@@ -57,7 +57,7 @@ Serwer:
 ```
 
 Klient:
-```console
+```
     -d, --display-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
     -h, --help                                 Print help information
     -n, --player-name <String>
@@ -66,7 +66,7 @@ Klient:
 ```
 
 Interfejs graficzny:
-```console
+```
     -c, --client-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
     -h, --help                               Print help information
     -p, --port <u16>
@@ -96,7 +96,7 @@ Należy wyłączyć algorytm Nagle'a (tzn. ustawić flagę TCP_NODELAY).
 
 ### 2.1. Komunikaty od klienta do serwera
 
-```cpp
+```
 enum ClientMessage {
     [0] Join { name: String },
     [1] PlaceBomb,
@@ -107,7 +107,7 @@ enum ClientMessage {
 
 Typ Direction ma następującą reprezentację binarną:
 
-```cpp
+```
 enum Direction {
     [0] Up,
     [1] Right,
@@ -119,7 +119,7 @@ enum Direction {
 Wiadomość od klienta `Join(“Żółć!”)` zostanie zserializowana jako ciąg bajtów
 `[0, 9, 197, 187, 195, 179, 197, 130, 196, 135, 33]`, gdzie:
 
-```console
+```
 0 - rodzaj wiadomości
 9 - długość napisu
 197, 187 - 'Ż'
@@ -137,12 +137,14 @@ Wiadomość `Move(Down)` zserializowana zostanie jako ciąg bajtów `[3, 2]`.
 
 
 Klient po podłączeniu się do serwera zaczyna obserwować rozgrywkę, jeżeli ta jest w toku.
-W przeciwnym razie może zgłosić chęć wzięcia w niej udziału, wysyłając komunikat `Join`. Serwer ignoruje komunikaty `Join` wysłane w trakcie rozgrywki. Serwer ignoruje również komunikaty typu innego niż `Join` w `Lobby`.
+W przeciwnym razie może zgłosić chęć wzięcia w niej udziału, wysyłając komunikat `Join`. 
+
+Serwer ignoruje komunikaty `Join` wysłane w trakcie rozgrywki. Serwer ignoruje również komunikaty typu innego niż `Join` w `Lobby`.
 
 
 ### 2.2. Komunikaty od serwera do klienta
 
-```cpp
+```
 enum ServerMessage {
     [0] Hello {
         server_name: String,
@@ -173,7 +175,7 @@ enum ServerMessage {
 
 Wiadomość od serwera typu `Turn`
 
-```cpp
+```
 ServerMessage::Turn {
         turn: 44,
         events: [
@@ -194,7 +196,7 @@ ServerMessage::Turn {
 
 będzie miała następującą reprezentację binarną:
 
-```console
+```
 [3, 0, 44, 0, 0, 0, 3, 2, 3, 0, 2, 0, 4, 2, 4, 0, 3, 0, 5, 0, 0, 0, 0, 5, 0, 5, 0, 7]
 
 3 - rodzaj wiadomości od serwera (`Turn`)
@@ -291,6 +293,8 @@ a rzędne w górę.
 
 ### 2.6. Podłączanie i odłączanie klientów
 
+Klient wysyła komunikat `Join` do serwera po otrzymaniu dowolnego (poprawnego) komunikatu od GUI, o ile klient jest w stanie `Lobby` (tzn. nie otrzymał od serwera komunikatu `GameStarted`.
+
 Po podłączeniu klienta do serwera serwer wysyła do niego komunikat `Hello`.
 Jeśli rozgrywka jeszcze nie została rozpoczęta,
 serwer wysyła komunikaty `AcceptedPlayer` z informacją o podłączonych graczach.
@@ -314,7 +318,7 @@ jest wyspecyfikowane przy uruchomieniu serwera.
 
 Inicjacja stanu gry przebiega następująco:
 
-```console
+```
 nr_tury = 0
 zdarzenia = []
 
@@ -344,8 +348,9 @@ Zasady:
 - Wielu graczy może zajmować to samo pole.
 - Bomby mogą zajmować to samo pole.
 - Gracze mogą położyć bombę, nawet jeśli stoją na zablokowanym polu (czyli na jednym polu może być blok, wielu graczy i wiele bomb)
+- Na danym polu może być maksymalnie jeden blok
 
-```console
+```
 zdarzenia = []
 
 dla każdej bomby:
@@ -376,14 +381,14 @@ W wyniku eksplozji bomby zostają zniszczone wszystkie roboty w jej zasięgu ora
 Intuicyjnie oznacza to, że można się schować za blokiem, ale położenie bloku pod sobą nie chroni przed eksplozją.
 
 Przykłady:
-```asm
+```
 @ - blok
 A, B, C... - bomby
 1, 2, 3... - gracze
 x - eksplozja
 ```
 
-```asm
+```
 .@2..
 ..1..
 @@A.@
@@ -392,7 +397,7 @@ x - eksplozja
 ```
 
 Pola oznaczone jako eksplozja po wybuchu A z promieniem równym 2:
-```asm
+```
 .Bx..
 ..x..
 Bxxxx
@@ -426,11 +431,11 @@ Co jeśli klient prześle komunikat o nieprawidłowym formacie? Czy należy wted
 
 ## 3. Protokół komunikacyjny pomiędzy klientem a interfejsem użytkownika
 
-Komunikacja z interfejsem odbywa się po UDP przy użyciu komunikatów serializowanych jw.
+Komunikacja z interfejsem odbywa się po UDP przy użyciu komunikatów serializowanych tak jak wyżej.
 
 Klient wysyła do interfejsu graficznego następujące komunikaty:
 
-```cpp
+```
 enum DrawMessage {
     [0] Lobby {
         server_name: String,
@@ -508,7 +513,7 @@ Rozwiązanie powinno być odpowiednio sformatowane (można użyć np. `clang-for
 Jako rozwiązanie można oddać tylko klienta (część A) lub tylko serwer (część B),
 albo obie części.
 
-Termin oddawania części A to 23.05, a termin oddawania części B to 06.07.
+Termin oddawania części A to 23.05, a termin oddawania części B to 7.0606.07.
 
 Jako rozwiązanie należy dostarczyć pliki źródłowe oraz plik `makefile`, które
 należy umieścić jako skompresowane archiwum w Moodle. Archiwum powinno zawierać
@@ -566,5 +571,3 @@ Testy będą obejmowały m.in.:
 - O: Dokładnie tak
 - P: Jeśli gra się jeszcze nie rozpoczęła i podłączy się nowy klient, to jak rozumiem, należy wysłać do niego komunikat Hello i serię komunikatów AcceptedPlayer, by poinformować o tym jacy są obecnie gracze w Lobby. Jeśli w odpowiedzi na to, klient prześle Join to należy do wszystkich obserwatorów i graczy wysłać AcceptedPlayer, żeby wszyscy się dowiedzieli o nowym graczu. Dobrze rozumiem?
 - O: Tak właśnie
-
-

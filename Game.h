@@ -2,7 +2,7 @@
 #define ZADANIE02_GAME_H
 
 #include "Utils.h"
-#include "Parameters.h"
+#include "ServerParameters.h"
 #include <map>
 #include <set>
 #include <vector>
@@ -65,7 +65,7 @@ public:
 
 class Board {
 public:
-	explicit Board(Parameters &parameters,
+	explicit Board(ServerParameters &parameters,
 	               std::map<player_id_t, Player> &currently_playing)
 			: parameters(parameters),
 			  currently_playing(currently_playing),
@@ -125,21 +125,21 @@ public:
 		}
 	}
 
-	void explode(Bomb &bomb) {
-		std::vector<Position> positions_to_explode;
+	void explode(Bomb &bomb, std::vector<Position> &fields_to_explode) {
 		Position bomb_position = bomb.get_position();
 
-		positions_to_explode.push_back(bomb_position);
+		fields_to_explode.push_back(bomb_position);
 		if (!fields[bomb_position.x][bomb_position.y].is_solid()) {
 			// jeżeli bomba wybucha na solidnym bloku, to rozsadza tylko jego
 			// (może trzeba będzie usunąć tego ifa, dopytać się)
-			explode_direction(bomb, Up, positions_to_explode);
-			explode_direction(bomb, Right, positions_to_explode);
-			explode_direction(bomb, Down, positions_to_explode);
-			explode_direction(bomb, Left, positions_to_explode);
+			explode_direction(bomb, Up, fields_to_explode);
+			explode_direction(bomb, Right, fields_to_explode);
+			explode_direction(bomb, Down, fields_to_explode);
+			explode_direction(bomb, Left, fields_to_explode);
 		}
 
-		for (auto &exploded_position: positions_to_explode) {
+		//ten for może powinien być w funkcji dla uruchomienia wszystkich bomb
+		for (auto &exploded_position: fields_to_explode) {
 			fields[exploded_position.x][exploded_position.y].become_air();
 			for (auto &element: currently_playing) {
 				Player &player = element.second;
@@ -179,14 +179,16 @@ public:
 
 	void activate_bombs() {
 		std::vector<Bomb> bombs_to_remove;
+		std::vector<Position> fields_to_explode;
 		for (auto &element: bombs) {
 			Bomb &bomb = element.second;
 			if (bomb.will_explode()) {
-				explode(bomb);
+				explode(bomb, fields_to_explode);
 				//todo dodaj zdarzenie BombExploded
 				bombs_to_remove.push_back(bomb);
 			}
 		}
+
 		for (auto bomb: bombs_to_remove) { //może tutaj referencja
 			bombs.erase(bomb.get_id());
 		}
@@ -208,7 +210,7 @@ public:
 
 private:
 	Random random;
-	Parameters &parameters;
+	ServerParameters &parameters;
 	std::vector<std::vector<Field>> fields;
 	std::map<bomb_id_t, Bomb> bombs;
 	std::map<player_id_t, Player> &currently_playing;
@@ -222,7 +224,7 @@ class Game {
 
 
 public:
-	explicit Game(Parameters &parameters)
+	explicit Game(ServerParameters &parameters)
 			: parameters(parameters),
 			  state(lobby_state),
 			  current_round(0),
@@ -265,7 +267,7 @@ public:
 private:
 	Board board;
 	std::map<player_id_t, Player> currently_playing;
-	Parameters parameters;
+	ServerParameters parameters;
 	game_state state;
 	int current_round;
 	player_id_t current_player_id;

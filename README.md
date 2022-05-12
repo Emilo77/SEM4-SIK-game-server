@@ -46,7 +46,7 @@ Serwer:
     -c, --players-count <u8>
     -d, --turn-duration <u64, milisekundy>
     -e, --explosion-radius <u16>
-    -h, --help                                   Print help information
+    -h, --help_enabled                                   Print help_enabled information
     -k, --initial-blocks <u16>
     -l, --game-length <u16>
     -n, --server-name <String>
@@ -59,7 +59,7 @@ Serwer:
 Klient:
 ```console
     -d, --display-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
-    -h, --help                                 Print help information
+    -h, --help_enabled                                 Print help_enabled information
     -n, --player-name <String>
     -p, --port <u16>
     -s, --server-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
@@ -68,7 +68,7 @@ Klient:
 Interfejs graficzny:
 ```
     -c, --client-address <(nazwa hosta):(port) lub (IPv4):(port) lub (IPv6):(port)>
-    -h, --help                               Print help information
+    -h, --help_enabled                               Print help_enabled information
     -p, --port <u16>
 ```
 

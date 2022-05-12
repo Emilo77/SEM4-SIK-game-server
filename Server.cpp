@@ -20,7 +20,7 @@ static void catch_int(int sig) {
 class Server {
 
 public:
-	explicit Server(Game &game, Parameters &parameters) :
+	explicit Server(Game &game, ServerParameters &parameters) :
 			game(game),
 			parameters(parameters) {}
 
@@ -95,109 +95,19 @@ public:
 				//disconnect śmietnika
 				break;
 		}
+		//send message do użytkowników
 	}
 
-	void initialize() {
-//		install_signal_handler(SIGINT, catch_int, SA_RESTART);
-//		/* Inicjujemy tablicę z gniazdkami klientów, poll_descriptors[0] to gniazdko centrali */
-//		for (auto &poll_descriptor: poll_descriptors) {
-//			poll_descriptor.fd = -1;
-//			poll_descriptor.events = POLLIN;
-//			poll_descriptor.revents = 0;
-//		}
-//		/* Tworzymy gniazdko centrali */
-//		poll_descriptors[0].fd = open_socket();
-//		bind_socket(poll_descriptors[0].fd, parameters.port);
-//		printf("Listening on port %u\n", parameters.port);
-//		start_listening(poll_descriptors[0].fd, QUEUE_LENGTH);
+	void initialize() {}
 
-	}
-
-	void run() {
-//		do {
-//			for (auto &poll_descriptor: poll_descriptors) {
-//				poll_descriptor.revents = 0;
-//			}
-//
-//			/* Po Ctrl-C zamykamy gniazdko centrali */
-//			if (finish && poll_descriptors[0].fd >= 0) {
-//				CHECK_ERRNO(close(poll_descriptors[0].fd));
-//				poll_descriptors[0].fd = -1;
-//			}
-//
-//			int poll_status = poll(poll_descriptors, CONNECTIONS,
-//			                       parameters.turn_duration);
-//			if (poll_status == -1) {
-//				if (errno == EINTR)
-//					fprintf(stderr, "Interrupted system call\n");
-//				else
-//					PRINT_ERRNO();
-//			} else if (poll_status > 0) {
-//				if (!finish && (poll_descriptors[0].revents & POLLIN)) {
-//					/* Przyjmuję nowe połączenie */
-//					sockaddr_in client_address;
-//					int client_fd = accept_connection(poll_descriptors[0].fd,
-//					                                  &client_address);
-//
-//					bool accepted = false;
-//					for (int i = 1; i < CONNECTIONS; ++i) {
-//						if (poll_descriptors[i].fd == -1) {
-//							fprintf(stderr, "Received new connection (%d)\n",
-//							        i);
-//
-//							poll_descriptors[i].fd = client_fd;
-//							poll_descriptors[i].events = POLLIN;
-//							active_clients++;
-//							accepted = true;
-//							break;
-//						}
-//					}
-//					if (!accepted) {
-//						CHECK_ERRNO(close(client_fd));
-//						fprintf(stderr, "Too many clients\n");
-//					}
-//				}
-//				for (int i = 1; i < CONNECTIONS; ++i) {
-//					if (poll_descriptors[i].fd != -1 &&
-//					    (poll_descriptors[i].revents & (POLLIN | POLLERR))) {
-//						ssize_t received_bytes = read(poll_descriptors[i].fd,
-//						                              buffer.get(), sizeof
-//						                              (buffer.get()));
-//						if (received_bytes < 0) {
-//							fprintf(stderr,
-//							        "Error when reading message from connection %d (errno %d, %s)\n",
-//							        i, errno, strerror(errno));
-//							CHECK_ERRNO(close(poll_descriptors[i].fd));
-//							poll_descriptors[i].fd = -1;
-//							active_clients -= 1;
-//						} else if (received_bytes == 0) {
-//							fprintf(stderr, "Ending connection (%d)\n", i);
-//							CHECK_ERRNO(close(poll_descriptors[i].fd));
-//							poll_descriptors[i].fd = -1;
-//							active_clients -= 1;
-//						} else {
-//							printf("(%d) -->%.*s\n", i, (int) received_bytes,
-//							       buffer.get());
-//						}
-//					}
-//				}
-//			} else {
-//				printf("%lu milliseconds passed without any events\n",
-//				       parameters.turn_duration);
-//			}
-//		} while (!finish || active_clients > 0);
-//
-//		if (poll_descriptors[0].fd >= 0)
-//			CHECK_ERRNO(close(poll_descriptors[0].fd));
-//		exit(EXIT_SUCCESS);
-	}
+	void run() {}
 
 private:
 	Game game;
 	Buffer buffer;
 	ssize_t read_length{0};
 	ssize_t sent_length{0};
-	Parameters &parameters;
+	ServerParameters &parameters;
 	size_t active_clients = 0;
 	struct pollfd poll_descriptors[CONNECTIONS];
 
@@ -205,7 +115,7 @@ private:
 
 
 int main(int argc, char *argv[]) {
-	Parameters parameters(argc, argv);
+	ServerParameters parameters(argc, argv);
 	Game game(parameters);
 	Server server(game, parameters);
 	server.run();

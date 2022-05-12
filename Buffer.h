@@ -4,7 +4,7 @@
 #define BUFFER_SIZE 65507
 
 #include "Utils.h"
-#include "Parameters.h"
+#include "ServerParameters.h"
 #include "Game.h"
 
 class Buffer {
@@ -51,7 +51,7 @@ private:
 
 public:
 
-	void insert_hello(Parameters &parameters);
+	void insert_hello(ServerParameters &parameters);
 
 	void insert_accepted_player(Player &player);
 

@@ -105,7 +105,7 @@ void Buffer::receive_string(string &str, size_t str_size) {
 	str = {buffer + read_index, str_size};
 }
 
-void Buffer::insert_hello(Parameters &parameters) {
+void Buffer::insert_hello(ServerParameters &parameters) {
 	reset_read_index();
 	insert((uint8_t) parameters.server_name.size());
 	insert(parameters.server_name);

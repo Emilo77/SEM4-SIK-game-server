@@ -8,7 +8,7 @@
 #include <list>
 
 #include "Utils.h"
-#include "Parameters.h"
+#include "ServerParameters.h"
 #include "Buffer.h"
 #include "Game.h"
 #include "common.h"

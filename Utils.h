@@ -4,10 +4,13 @@
 #include <cstdint>
 #include <string>
 #include <list>
-#include <bits/sigaction.h>
 #include <csignal>
+#include <variant>
+#include <vector>
 
+using player_id_t = uint8_t;
 using bomb_id_t = uint32_t;
+using score_t = uint32_t;
 
 class Random {
 	uint32_t random;
@@ -21,126 +24,106 @@ public:
 	}
 };
 
+/* Enum określający kierunek. */
 enum Direction {
 	Up = 0,
 	Right = 1,
 	Down = 2,
 	Left = 3,
-	InvalidDirection = 4,
 };
 
-enum ClientMessage {
-	Join = 0,
-	PlaceBomb = 1,
-	PlaceBlock = 2,
-	Move = 3,
-	Invalid = 4,
-	// przy castowaniu na enum, dowolna inna wartość niż <1,4>
-	// stanie siże zerem, czyli Invalid
+/* Enum określający stan rozgrywki. */
+enum GameState {
+	LobbyState = 0,
+	GameplayState = 1,
 };
 
-struct ClientMessageStruct {
-	ClientMessage message;
-	std::string name{};
-	Direction direction{};
-
-	ClientMessageStruct(ClientMessage message)
-			: message(message) {}
-
-	ClientMessageStruct(ClientMessage message, std::string &name)
-			: message(message),
-			  name(name) {}
-
-	ClientMessageStruct(ClientMessage message, Direction direction)
-			: message(message),
-			  direction(direction) {}
-};
-
-
-struct Position {
+/* Struktura określająca pozycję. */
+class Position {
+public:
 	uint16_t x;
 	uint16_t y;
 
+	Position() : x(0), y(0) {}
+
 	Position(uint16_t x, uint16_t y) : x(x), y(y) {}
-
-	bool operator==(const Position &rhs) const {
-		return x == rhs.x &&
-		       y == rhs.y;
-	}
-
-	bool operator!=(const Position &rhs) const {
-		return !(x == rhs.x &&
-		         y == rhs.y);
-	}
 };
 
-std::pair<int,int> direction_to_pair(Direction &direction) {
-	switch(direction) {
-		case Up:
-			return {0, 1};
-		case Right:
-			return {1, 0};
-		case Down:
-			return {0, -1};
-		case Left:
-			return {-1, 0};
-		case InvalidDirection:
-			return {69, 69}; //todo potem zmienić
-	}
-}
-
+/* Klasa określająca bombę. */
 class Bomb {
-	uint32_t bomb_id;
-	uint16_t timer;
-	Position position;
-
 public:
-	bool operator<(const Bomb &rhs) const {
-		return bomb_id < rhs.bomb_id;
-	}
+	Position position;
+	uint16_t timer;
 
-	void tic() {
+	Bomb(Position position, uint16_t timer)
+			: position(position),
+			  timer(timer) {}
+
+	void decrease_timer() {
 		timer--;
 	}
-
-	bool will_explode() {
-		return timer == 0;
-	}
-
-	bomb_id_t get_id() {
-		return bomb_id;
-	}
-
-	Position get_position() {
-		return position;
-	}
 };
 
-class Event {
-};
-
-class BombPlaced : public Event {
+/* Klasa określająca gracza. */
+class Player {
+	bool dead{false};
 public:
+	std::string name;
+	std::string address;
+
+	[[nodiscard]] bool is_dead() const { return dead; }
+
+	void explode() { dead = true; }
+
+	void revive() { dead = false; }
+};
+
+/* Rodzaj wydarzenia. */
+enum EventType {
+	BombPlaced = 0,
+	BombExploded = 1,
+	PlayerMoved = 2,
+	BlockPlaced = 3,
+};
+
+/* Wydarzenie BombPlaced. */
+struct BombPlaced {
 	uint32_t bomb_id;
 	Position position;
 };
 
-class BombExploded : public Event {
-public:
+/* Wydarzenie BombExploded. */
+struct BombExploded {
 	uint32_t bomb_id;
-	std::list<uint8_t> robots_destroyed;
-	std::list<Position> blocks_destroyed;
+	std::vector<uint8_t> robots_destroyed;
+	std::vector<Position> blocks_destroyed;
 };
 
-class PlayerMoved : public Event {
-public:
+/* Wydarzenie PlayerMoved. */
+struct PlayerMoved {
 	uint8_t player_id;
 	Position position;
 };
 
-class BlockPlaced : public Event {
-public:
+/* Wydarzenie BlockPlaced. */
+struct BlockPlaced {
 	Position position;
+};
+
+/* Klasa określająca wydarzenie. */
+class Event {
+public:
+	EventType type;
+	std::variant<struct BombPlaced, struct BombExploded,
+			struct PlayerMoved, struct BlockPlaced> data;
+
+	Event(EventType type,
+	      std::variant<struct BombPlaced,
+			      struct BombExploded,
+			      struct PlayerMoved,
+			      struct BlockPlaced> &data)
+			: type(type),
+			  data(data) {}
 };
 
 #endif //ZADANIE02_EVENT_H

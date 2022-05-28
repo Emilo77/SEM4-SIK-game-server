@@ -11,13 +11,10 @@
 #include "ServerParameters.h"
 #include "Buffer.h"
 #include "Game.h"
-#include "common.h"
 
-#define CONNECTIONS 26
+#define MAX_CONNECTIONS 26
 #define QUEUE_LENGTH 5
 #define MOVE_INSTR_LENGTH 3
-#define PLACEBOMB_INSTR_LENGTH 1
-#define PLACEBLOCK_INSTR_LENGTH 1
 
 using std::string;
 

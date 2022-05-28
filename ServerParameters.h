@@ -20,7 +20,7 @@ private:
 	void print_parameters() const {
 		std:: cout << "Server parameters:" << std::endl;
 		std:: cout << "         bomb_timer:       " << bomb_timer << std::endl;
-		std:: cout << "         players_count:    " << players_count <<std::endl;
+		std:: cout << "         players_count:    " << (uint16_t) players_count<<std::endl;
 		std:: cout << "         turn_duration:    " << turn_duration <<std::endl;
 		std:: cout << "         explosion_radius: " << explosion_radius << std::endl;
 		std:: cout << "         initial_blocks:   " << initial_blocks <<std::endl;

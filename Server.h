@@ -12,7 +12,7 @@
 #include "Buffer.h"
 #include "Game.h"
 
-#define MAX_CONNECTIONS 26
+#define MAX_CONNECTIONS 25
 #define QUEUE_LENGTH 5
 #define MOVE_INSTR_LENGTH 3
 

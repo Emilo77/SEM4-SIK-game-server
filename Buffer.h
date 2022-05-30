@@ -131,15 +131,10 @@ public:
 	/* Wstępne ustawienie wielkości kontenerów. */
 	void initialize(size_t size);
 
-	/* Wstępne ustawienie wielkości kontenerów. */
+	/* Dopasowanie wielkości kontenerów. */
 	void adapt_size();
 
-	/* Wstawianie wiadomości wysyłanej do serwera */
-	size_t insert_msg_to_server(ClientMessageToServer &message);
-
-	/* Odbieranie wiadomości wysyłanej od serwera */
-	std::optional<ServerMessageToClient>
-	receive_msg_from_server(size_t received_size);
+	void insert_message_to_clients();
 
 	/* Referencja do bufora odbierającego komunikaty */
 	char *get_receive() { return &receive_buffer[shift_index]; }

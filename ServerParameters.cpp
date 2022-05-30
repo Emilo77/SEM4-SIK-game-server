@@ -123,7 +123,7 @@ void ServerParameters::check_parameters() {
 
 		if(vm.count("seed")) {
 			check_32(seed_, "seed");
-			seed = (uint32_t) seed_;
+			seed.emplace((uint32_t) seed_);
 		}
 
 		po::notify(vm);

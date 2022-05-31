@@ -96,7 +96,7 @@ public:
 
 class Game {
 public:
-	explicit Game(ServerParameters &server_parameters, Random &random)
+	explicit Game(ServerParameters &server_parameters, RandomGenerator &random)
 			: random(random),
 			  server_name(server_parameters.server_name),
 			  players_count(server_parameters.players_count),
@@ -108,7 +108,7 @@ public:
 			  initial_blocks(server_parameters.initial_blocks) {}
 
 private:
-	Random random;
+	RandomGenerator random;
 	enum GameState game_state{LobbyState};
 
 	std::string server_name{};

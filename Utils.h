@@ -14,14 +14,20 @@ using bomb_id_t = uint32_t;
 using player_id_t = uint8_t;
 using score_t = uint32_t;
 
-class Random {
-	uint32_t random;
+class RandomGenerator {
+	uint32_t seed{0};
 public:
-	explicit Random(uint32_t seed) : random(seed) {}
+	 explicit RandomGenerator(std::optional<uint32_t> seed_option) {
+		if (seed_option.has_value()) {
+			seed = seed_option.value();
+		} else {
+			seed = (uint32_t) time(nullptr);
+		}
+	}
 
 	uint32_t generate() {
-		uint32_t r = random;
-		random = (random * 279410273) % 4294967291;
+		uint32_t r = seed;
+		seed = (seed * 279410273) % 4294967291;
 		return r;
 	}
 };

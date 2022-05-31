@@ -318,7 +318,7 @@ Należy użyć dokładnie takiego generatora, żeby umożliwić automatyczne tes
 rozwiązania (uwaga na konieczność wykonywania pośrednich obliczeń na typie
 64-bitowym).
 
-Przykłady użycia generatora zostały podane w plikach `c/random.c` oraz `cpp/random.cpp`.
+Przykłady użycia generatora zostały podane w plikach `c/seed.c` oraz `cpp/seed.cpp`.
 
 ### 2.5. Stan gry
 
@@ -377,14 +377,14 @@ nr_tury = 0
 zdarzenia = []
 
 dla każdego gracza w kolejności id:
-    pozycja_x_robota = random() % szerokość_planszy
-    pozycja_y_robota = random() % wysokość_planszy
+    pozycja_x_robota = seed() % szerokość_planszy
+    pozycja_y_robota = seed() % wysokość_planszy
     
     dodaj zdarzenie `PlayerMoved` do listy
     
 tyle razy ile wynosi parametr `initial_blocks`:
-    pozycja_x_bloku = random() % szerokość_planszy
-    pozycja_y_bloku = random() % wysokość_planszy
+    pozycja_x_bloku = seed() % szerokość_planszy
+    pozycja_y_bloku = seed() % wysokość_planszy
     
     dodaj zdarzenie `BlockPlaced` do listy
     
@@ -420,8 +420,8 @@ dla każdego gracza w kolejności id:
         jeśli gracz wykonał ruch:
             obsłuż ruch gracza i dodaj odpowiednie zdarzenie do listy
     jeśli robot został zniszczony:
-        pozycja_x_robota = random() % szerokość_planszy
-        pozycja_y_robota = random() % wysokość_planszy
+        pozycja_x_robota = seed() % szerokość_planszy
+        pozycja_y_robota = seed() % wysokość_planszy
     
         dodaj zdarzenie `PlayerMoved` do listy
         

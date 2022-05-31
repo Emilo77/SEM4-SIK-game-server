@@ -244,3 +244,9 @@ void Buffer::adapt_size() {
 		receive_buffer.resize(receive_buffer.size() + MAX_PACKAGE_SIZE, 0);
 	}
 }
+
+size_t Buffer::insert_hello_message(struct Hello hello) {
+	reset_send_index();
+	insert_hello(hello);
+	return send_buffer.size();
+}

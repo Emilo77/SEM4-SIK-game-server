@@ -8,6 +8,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <optional>
 
 using turn_id_t = uint16_t;
 using bomb_id_t = uint32_t;

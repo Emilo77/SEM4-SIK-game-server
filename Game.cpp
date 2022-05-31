@@ -33,6 +33,21 @@ void Board::apply_explosions() {
 	}
 }
 
+void Board::apply_blocks() {
+	/* Iterujemy się po całej planszy. */
+	for (auto &field: fields) {
+		for (auto &row: field) {
+			/* Jeżeli pole eksplodowało w aktualnej turze, dodajemy jego
+			 * pozycję do listy, zmieniamy pole na nie-blok
+			 * oraz resetujemy stan eksplozji. */
+			if (row.will_be_solid()) {
+				row.make_block();
+				row.reset_will_be_solid();
+			}
+		}
+	}
+}
+
 /* Funkcja pomocnicza do obliczania eksplozji po wybuchu bomby. */
 static inline std::pair<int, int> direction_to_pair(Direction direction) {
 	switch (direction) {
@@ -49,8 +64,8 @@ static inline std::pair<int, int> direction_to_pair(Direction direction) {
 }
 
 Position Game::random_position() {
-	uint16_t new_x = random.generate() % size_x;
-	uint16_t new_y = random.generate() % size_y;
+	uint16_t new_x = (uint16_t) random.generate() % size_x;
+	uint16_t new_y = (uint16_t) random.generate() % size_y;
 
 	return {new_x, new_y};
 }
@@ -160,30 +175,38 @@ void Game::accept_player(Player &player) {
 }
 
 void Game::start_gameplay() {
+	/* Zmieniamy stan gry na Gameplay. */
 	game_state = GameplayState;
 
+	/* Nadajemy graczom domyślne pozycje i wyniki. */
 	initialize_containers();
 
+	/* Inicjujemy kontener na zdarzenia. */
 	std::vector<Event> new_events;
 
 	for (auto &player: players) {
 
+		/* Losujemy pozycję i ustawiamy tam gracza. */
 		Position new_position = random_position();
 		player_positions.at(player.first).change(new_position);
 
+		/* Dodajemy zdarzenie PlayerMoved do kontenera zdarzeń. */
 		struct PlayerMoved data(player.first, new_position);
 		new_events.emplace_back(PlayerMoved, data);
 	}
 
 	for (int i = 0; i < initial_blocks; i++) {
 
+		/* Losujemy pozycję do postawienia bloku. */
 		Position new_position = random_position();
 		board.at(new_position).make_block();
 
+		/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
 		struct BlockPlaced data(new_position);
 		new_events.emplace_back(BlockPlaced, data);
 	}
 
+	/* Dodajemy turę do kontenera tur. */
 	turns.emplace_back(id_generator.new_turn_id(), new_events);
 }
 
@@ -193,30 +216,44 @@ void Game::simulate_turn() {
 	std::vector<bomb_id_t> bombs_to_remove;
 
 	for (auto &bomb: bombs) {
+		/* Zmniejszamy timer bomby. */
 		bomb.second.decrease_timer();
+		/* Jeżeli bomba powinna eksplodować, symulujemy eksplozję. */
 		if (bomb.second.ready_to_explode()) {
+
+			/* Inicjujemy kontenery dla zniszczonych graczy i bloków. */
 			std::vector<player_id_t> players_exploded;
 			std::vector<Position> blocks_exploded;
 
+			/* Wyznaczamy zniszczonych graczy i zniszczone bloki. */
 			mark_explosions(bomb.first, blocks_exploded, players_exploded);
 
+			/* Dodajemy zdarzenie BombExploded do kontenera zdarzeń. */
 			struct BombExploded data(bomb.first, players_exploded,
 			                         blocks_exploded);
 			new_events.emplace_back(BombExploded, data);
 
+			/* Zaznaczamy, że należy usunąć bombę. */
 			bombs_to_remove.push_back(bomb.first);
 		}
 	}
 
+	/* Usuwamy wszystkie bomby, które eksplodowały w tej turze. */
 	for (auto &id: bombs_to_remove) {
 		bombs.erase(id);
 	}
 
+	/* Usuwamy wszystkie bloki, które zostały zniszczone przez eksplozje. */
 	board.apply_explosions();
 
+	/* Obsługujemy graczy. */
 	for (auto &player: players) {
+		/* Jeżeli gracz */
 		if (!player.second.is_dead()) {
 			//obsłuż ruch gracza
+
+		/* Jeżeli gracz eksplodował w tej turze,
+		 * przenosimy go na losową pozycję i ignorujemy jego ruch. */
 		} else {
 			Position new_position = random_position();
 			player_positions.at(player.first) = new_position;
@@ -226,8 +263,14 @@ void Game::simulate_turn() {
 		}
 	}
 
+	/* Zwiększamy wynik wszystkim graczom, którzy eksplodowali
+	 * oraz "przywracamy ich do życia". */
 	change_scores_and_revive_players();
 
+	/* Wstawiamy wszystkie bloki postawione w tej turze przez graczy. */
+	board.apply_blocks();
+
+	/* Dodajemy turę to kontenera tur. */
 	turns.emplace_back(id_generator.new_turn_id(), new_events);
 }
 
@@ -245,6 +288,8 @@ struct Turn Game::generate_Turn() {
 }
 
 std::optional<Event> Game::apply_Join(/* ???*/) {
+
+	std::optional<Event> new_event;
 
 }
 

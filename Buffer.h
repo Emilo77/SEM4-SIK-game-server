@@ -134,6 +134,8 @@ public:
 	/* Dopasowanie wielkości kontenerów. */
 	void adapt_size();
 
+	size_t insert_hello_message(struct Hello hello);
+
 	void insert_message_to_clients();
 
 	/* Referencja do bufora odbierającego komunikaty */

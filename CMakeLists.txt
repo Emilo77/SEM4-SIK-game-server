@@ -19,6 +19,7 @@ add_executable(robots-server
         Buffer.cpp
         ServerParameters.cpp
         Server.cpp
+        Connection.cpp
         Game.cpp)
 
 TARGET_LINK_LIBRARIES(robots-server ${USED_LIBS})

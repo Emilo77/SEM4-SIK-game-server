@@ -89,8 +89,11 @@ public:
 	/* Ustawiamy planszę na odpowiedni rozmiar i czyścimy ją. */
 	void reset(uint16_t size_x, uint16_t size_y);
 
-	/* Aktualizacja stanu pól po turze. */
+	/* Aktualizacja stanu pól po eksplozjach turze. */
 	void apply_explosions();
+
+	/* Aktualizacja stanu pól po stawianiu bloków w turze. */
+	void apply_blocks();
 
 };
 
@@ -140,6 +143,9 @@ public:
 
 	void simulate_turn();
 
+	/* Generowanie wiadomości Hello dla połączonego klienta */
+	struct Hello generate_Hello();
+
 private:
 
 	Position random_position();
@@ -188,9 +194,6 @@ private:
 	/* Zmiana stanu gry. */
 	std::optional<Event>
 	apply_client_message(ClientMessage &message);
-
-	/* Generowanie wiadomości Hello dla połączonego klienta */
-	struct Hello generate_Hello();
 
 	struct AcceptedPlayer generate_AcceptedPlayer();
 

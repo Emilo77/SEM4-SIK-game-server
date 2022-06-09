@@ -18,7 +18,7 @@ using score_t = uint32_t;
 class RandomGenerator {
 	uint32_t seed{0};
 public:
-	 explicit RandomGenerator(std::optional<uint32_t> seed_option) {
+	  explicit RandomGenerator(std::optional<uint32_t> seed_option) {
 		if (seed_option.has_value()) {
 			seed = seed_option.value();
 		} else {
@@ -28,7 +28,7 @@ public:
 
 	uint32_t generate() {
 		uint32_t r = seed;
-		seed = (seed * 279410273) % 4294967291;
+		seed = (seed * 48271) % 2147483647;
 		return r;
 	}
 };
@@ -157,7 +157,7 @@ struct BlockPlaced {
 
 	BlockPlaced() : position() {}
 
-	BlockPlaced(Position position) : position(position) {}
+	explicit BlockPlaced(Position position) : position(position) {}
 };
 
 /* Klasa określająca wydarzenie. */

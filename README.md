@@ -3,13 +3,14 @@
 Pytania proszę wysyłać na adres agluszak@mimuw.edu.pl.
 
 Historia zmian:
+- **08.06.2022** - doprecyzowanie jak wygląda koniec gry, dodanie skryptu `verifier.sh`
+- **06.06.2022** - nowe pytania
 - **25.05.2023** - Doprecyzowanie, kiedy wysyłane są komunikaty do GUI:
   Po Turn - Game
   Po AcceptedPlayer, GameEnded i Hello - Lobby
   Po GameStarted - nic
 
   A wszystkie pozycje początkowe graczy i bloków są wysyłane w turze 0.
-
 - **24.05.2022** - Wycofanie poniższego (nie będziemy osobno oceniać jakości kodu po pierwszej części)
 - **23.05.2022** - Przy oddawaniu klienta pliki (lub ich części) dotyczące serwera zostaną uznane za zbędne
 - **20.05.2022** - WAŻNE: zmiana jak wysyłane są informacje o rozgrywce po dołączeniu w trakcie. Doprecyzowanie, w jaki sposób obliczany jest wybuch bomby. 
@@ -318,7 +319,7 @@ Należy użyć dokładnie takiego generatora, żeby umożliwić automatyczne tes
 rozwiązania (uwaga na konieczność wykonywania pośrednich obliczeń na typie
 64-bitowym).
 
-Przykłady użycia generatora zostały podane w plikach `c/seed.c` oraz `cpp/seed.cpp`.
+Przykłady użycia generatora zostały podane w plikach `c/random.c` oraz `cpp/random.cpp`.
 
 ### 2.5. Stan gry
 
@@ -377,14 +378,14 @@ nr_tury = 0
 zdarzenia = []
 
 dla każdego gracza w kolejności id:
-    pozycja_x_robota = seed() % szerokość_planszy
-    pozycja_y_robota = seed() % wysokość_planszy
+    pozycja_x_robota = random() % szerokość_planszy
+    pozycja_y_robota = random() % wysokość_planszy
     
     dodaj zdarzenie `PlayerMoved` do listy
     
 tyle razy ile wynosi parametr `initial_blocks`:
-    pozycja_x_bloku = seed() % szerokość_planszy
-    pozycja_y_bloku = seed() % wysokość_planszy
+    pozycja_x_bloku = random() % szerokość_planszy
+    pozycja_y_bloku = random() % wysokość_planszy
     
     dodaj zdarzenie `BlockPlaced` do listy
     
@@ -420,8 +421,8 @@ dla każdego gracza w kolejności id:
         jeśli gracz wykonał ruch:
             obsłuż ruch gracza i dodaj odpowiednie zdarzenie do listy
     jeśli robot został zniszczony:
-        pozycja_x_robota = seed() % szerokość_planszy
-        pozycja_y_robota = seed() % wysokość_planszy
+        pozycja_x_robota = random() % szerokość_planszy
+        pozycja_y_robota = random() % wysokość_planszy
     
         dodaj zdarzenie `PlayerMoved` do listy
         
@@ -715,3 +716,17 @@ Innymi słowy, czy wiadomości od GUI mamy odbierać przez receive, czy receive_
  - O: Może, ale zostaną zignorowane (chodzi o to, że mogą np. dojść z opóźnieniem z ostatniej tury, kiedy serwer wróci już do stanu lobby)
  - P: Jak klient ma postępować z bombami które zostały mu przesłane, ale nie wybuchły, mimo tego, że ich timer spadł poniżej zera?
  - O: UB
+
+### 06.06.2022
+
+ - P: Czy można użyć biblioteki PFR https://github.com/boostorg/pfr) z Boosta nowszego niż jest na students?
+ - O: Tak, można założyć, że `#include "boost/pfr.hpp"` będzie działać w środowisku testowym. Nie należy dołączać biblioteki do paczki z rozwiązaniem.
+ - P: Czy można użyć jakichś innych bibliotek header-only, nie wchodzących w skład Boosta 1.74?
+ - O: Nie
+
+### 08.06.2022
+
+- P: Jak wygląda koniec gry?
+- O: Serwer wysyła Turn z turn=game_length-1 czeka na ruchy użytkowników, przetwarza, wysyła Turn z turn=game_length i od razu (nic się już nie zmienia) wysyła GameEnded z wynikami. Wówczas wyniki wysłane przez serwer powinny być takie jak obliczone w kliencie.
+- P: Czy można prosić o przykład, jak powinna wyglądać jakaś krótka rozgrywka?
+- O: Załóżmy, że serwer został uruchomiony z parametrami `-b 1 -c 1 -l 3`. Do serwera w stanie lobby podłącza się klient. Otrzymuje on komunikat `Hello`. Serwer nadal jest w stanie lobby, dopóki klient nie wyśle komunikatu `Join`. Wówczas serwer wysyła kolejno komunikat `AcceptedPlayer`, przechodzi w stan rozgrywki i wysyła kolejno: `GameStarted`, `Turn 0` (z początkową pozycją gracza i bloku). Zaczyna się tura 1. Załóżmy, że w czasie jej trwania gracz kładzie bombę. Serwer wówczas wyśle turę o numerze 1 ze zdarzeniem `BombPlaced`. W i-tej (gdzie i >= 1) turze najpierw jest faza otrzymywania wiadomości od klientów, a później podsumowanie tej fazy poprzez wysłanie komunikatu do klientów. Rozpoczyna się druga tura. Załóżmy, że teraz dołącza drugi klient, który staje się obserwatorem. Serwer wyśle do niego kolejno: `Hello`, `GameStarted`, `Turn 0`, `Turn 1` (tury wysyłane są z identycznymi zdarzeniami jak do pierwszego klienta - żeby obserwator mógł "nadrobić" stan gry). Teraz serwer wyśle do obu klientów turę o numerze 2 ze zdarzeniami `BombExploded`, `PlayerMoved` (bo gracz się "odrodzi" na innym polu - jeśli w czasie trwania drugiej tury chciał wykonać jakiś ruch, to zostanie on zignorowany, bo robot w tej turze został zniszczony) oraz `BlockDestroyed` (o ile blok został zniszczony). Rozpoczyna się trzecia tura. Załóżmy, że teraz gracz się poruszył. Wówczas serwer wyśle do obu klientów turę (o numerze 3) ze zdarzeniem `PlayerMoved` i od razu `GameEnded`.

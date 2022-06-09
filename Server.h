@@ -13,6 +13,7 @@
 #include "Buffer.h"
 #include "Game.h"
 #include "Connection.h"
+#include "GameRoom.h"
 
 using boost::asio::ip::tcp;
 
@@ -20,45 +21,37 @@ class Server {
 
 public:
 	explicit Server(Game &game, ServerParameters &parameters) :
-			game(game),
-			parameters(parameters),
-			_acceptor(_io_context, tcp::endpoint(tcp::v6(), parameters.port)) {}
-
+			_acceptor(_io_context, tcp::endpoint(tcp::v6(), parameters.port)),
+			_game_room(parameters, game) {}
 
 	void run() {
 		try {
 			do_accept();
 			std::cerr << "Started accepting connections ..." << std::endl;
 			_io_context.run();
+
 		} catch (std::exception &e) {
 			std::cerr << e.what() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}
 
-
 private:
 	void do_accept() {
 
-		auto connection = Connection::create(_io_context, game);
-		_connections.push_back(connection);
-
-		_acceptor.async_accept(connection->Socket(), [connection, this](const
-		                                                                boost::system::error_code &error) {
-			if (!error) {
-				connection->start();
-			}
-			do_accept();
-		});
+		_acceptor.async_accept(
+				[this](boost::system::error_code ec, tcp::socket socket) {
+					if (!ec) {
+						std::make_shared<Connection>(std::move(socket),
+						                             _game_room)->do_start();
+					}
+					do_accept();
+				});
 	}
-
-	Game game;
-	Buffer buffer;
-	ServerParameters parameters;
 
 	boost::asio::io_context _io_context;
 	tcp::acceptor _acceptor;
-	std::vector<Connection::pointer> _connections;
+	GameRoom _game_room;
 };
 
 

@@ -25,10 +25,6 @@ uint16_t Buffer::convert_to_send(uint16_t number) { return htobe16(number); }
 
 uint32_t Buffer::convert_to_send(uint32_t number) { return htobe32(number); }
 
-uint16_t Buffer::convert_to_receive(uint16_t number) { return be16toh(number); }
-
-uint32_t Buffer::convert_to_receive(uint32_t number) { return be32toh(number); }
-
 void Buffer::insert_raw(const string &str) {
 	size_t size = str.size();
 	memcpy(&send_buffer[send_index], str.c_str(), size);
@@ -78,7 +74,8 @@ void Buffer::receive_raw(string &str, size_t str_size) {
 	}
 }
 
-void Buffer::receive(uint8_t &number) {
+uint8_t Buffer::receive_u8() {
+	uint8_t number;
 	try {
 		size_t size = sizeof(number);
 		check_if_message_incomplete(size);
@@ -88,43 +85,19 @@ void Buffer::receive(uint8_t &number) {
 	} catch (IncompleteMessage &e) {
 		throw e;
 	}
+	return number;
 }
 
-void Buffer::receive(uint16_t &number) {
+std::string Buffer::receive_string() {
+	std::string str;
 	try {
-		size_t size = sizeof(number);
-		check_if_message_incomplete(size);
-		memcpy(&number, &receive_buffer[read_index], size);
-		read_index += size;
-		number = convert_to_receive(number);
-
-	} catch (IncompleteMessage &e) {
-		throw e;
-	}
-}
-
-void Buffer::receive(uint32_t &number) {
-	try {
-		size_t size = sizeof(number);
-		check_if_message_incomplete(size);
-		memcpy(&number, &receive_buffer[read_index], size);
-		read_index += size;
-		number = convert_to_receive(number);
-
-	} catch (IncompleteMessage &e) {
-		throw e;
-	}
-}
-
-void Buffer::receive(string &str) {
-	try {
-		uint8_t string_size = 0;
-		receive(string_size);
+		uint8_t string_size = receive_u8();
 		receive_raw(str, string_size);
 
 	} catch (IncompleteMessage &e) {
 		throw e;
 	}
+	return str;
 }
 
 void Buffer::insert_list_player_ids(std::vector<player_id_t> &ids) {
@@ -208,12 +181,12 @@ void Buffer::insert_list_events(std::vector<Event> &vector) {
 
 void Buffer::insert_hello(struct Hello &hello) {
 	insert(hello.server_name);
-	insert(hello.players_count );
-	insert(hello.size_x );
-	insert(hello.size_y );
-	insert(hello.game_length );
-	insert(hello.explosion_radius );
-	insert(hello.bomb_timer );
+	insert(hello.players_count);
+	insert(hello.size_x);
+	insert(hello.size_y);
+	insert(hello.game_length);
+	insert(hello.explosion_radius);
+	insert(hello.bomb_timer);
 }
 
 void Buffer::insert_accepted_player(struct AcceptedPlayer &accepted_player) {
@@ -234,6 +207,91 @@ void Buffer::insert_game_ended(struct GameEnded &game_ended) {
 	insert_map_scores(game_ended.scores);
 }
 
+size_t Buffer::insert_ServerMessage(ServerMessage &message) {
+	reset_send_index();
+	switch (message.type) {
+		case Hello:
+			insert_hello(std::get<struct Hello>(message.data));
+			break;
+		case AcceptedPlayer:
+			insert_accepted_player(
+					std::get<struct AcceptedPlayer>(message.data));
+			break;
+		case GameStarted:
+			insert_game_started(std::get<struct GameStarted>(message.data));
+			break;
+		case Turn:
+			insert_turn(std::get<struct Turn>(message.data));
+			break;
+		case GameEnded:
+			insert_game_ended(std::get<struct GameEnded>(message.data));
+			break;
+	}
+	return get_send_size();
+}
+
+ClientMessage Buffer::receive_ClientMessage(size_t received_size) {
+	/* Resetujemy index do czytania danych z bufora. */
+	reset_read_index();
+
+	/* Zwiększamy index końca danych o otrzymaną ilość danych. */
+	end_of_data_index += received_size;
+
+	/* Inicjujemy potrzebne zmienne do przechowania wiadomości. */
+	auto clientMessage = std::optional<ClientMessage>();
+	uint8_t message;
+	uint8_t possible_direction;
+	std::variant<std::string, Direction> data;
+
+	try {
+		/* Odbieramy i sprawdzamy typ wiadomości */
+		message = receive_u8();
+		check_client_message_type(message);
+
+		switch((ClientMessageToServerType) message) {
+			case Join:
+				data = receive_string();
+				clientMessage.emplace(Join, data);
+				break;
+			case PlaceBomb:
+				clientMessage.emplace(PlaceBomb, data);
+				break;
+			case PlaceBlock:
+				clientMessage.emplace(PlaceBlock, data);
+				break;
+			case Move:
+				possible_direction = receive_u8();
+				check_direction(possible_direction);
+				data = (Direction) possible_direction;
+				clientMessage.emplace(Move, data);
+				break;
+		}
+
+	} catch (IncompleteMessage &e) {
+		/* Jeżeli wiadomość okazała się niekompletna, przesuwamy
+        * index odbierania danych. Przekazujemy wyjątek dalej. */
+		set_shift(end_of_data_index);
+		throw e;
+
+	} catch (InvalidMessage &e) {
+		/* Jeżeli wiadomość okazała się niepoprawna, przekazujemy wyjątek
+        * dalej. */
+		throw e;
+	}
+
+	/* Jeżeli udało się wczytać wiadomość z danych z bufora,
+	 * przesuwamy index końca danych i index odbierania danych. */
+	end_of_data_index -= get_read_size();
+	set_shift(end_of_data_index);
+
+	/* Przesuwamy dane o ilość, jaką wczytaliśmy. */
+	for (size_t i = 0; i < end_of_data_index; i++) {
+		receive_buffer[i] = receive_buffer[i + get_read_size()];
+	}
+
+	return clientMessage.value();
+}
+
 void Buffer::initialize(size_t size) {
 	receive_buffer.resize(size, 0);
 	send_buffer.resize(size, 0);
@@ -243,10 +301,4 @@ void Buffer::adapt_size() {
 	if (shift_index + MAX_PACKAGE_SIZE > receive_buffer.size()) {
 		receive_buffer.resize(receive_buffer.size() + MAX_PACKAGE_SIZE, 0);
 	}
-}
-
-size_t Buffer::insert_hello_message(struct Hello hello) {
-	reset_send_index();
-	insert_hello(hello);
-	return send_buffer.size();
 }

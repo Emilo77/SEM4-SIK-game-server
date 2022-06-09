@@ -4,7 +4,7 @@ project(Zadanie02_server)
 set(CMAKE_CXX_STANDARD 20)
 
 #set(CMAKE_CXX_FLAGS " -pthread -Wall -Wextra -Wconversion -Werror -O2 -std=gnu++20")
-set(CMAKE_CXX_FLAGS " -pthread -Wall -Wextra -Wconversion -O2 -std=gnu++17")
+set(CMAKE_CXX_FLAGS " -pthread -Wall -Wextra -Wconversion -Werror -O2 -std=gnu++17")
 
 SET(Boost_USE_STATIC_LIBS FALSE)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS system program_options)
@@ -19,7 +19,8 @@ add_executable(robots-server
         Buffer.cpp
         ServerParameters.cpp
         Server.cpp
-        Connection.cpp
-        Game.cpp)
+        Connection.cpp Connection.h
+        Game.cpp
+        GameRoom.cpp GameRoom.h)
 
 TARGET_LINK_LIBRARIES(robots-server ${USED_LIBS})

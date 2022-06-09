@@ -6,7 +6,7 @@
 #define MAX_PACKAGE_SIZE 65535
 /* Początkowa wielkość bufora do obsługi GUI -> SERWER, są tam wysyłane komunikaty
  * o małej wielkości, zatem ustawiamy mniejszy rozmiar bufora. */
-#define SMALL_BUFFER_SIZE 64
+#define BUFFER_SIZE 1024
 
 #include "ServerParameters.h"
 #include "Utils.h"
@@ -40,11 +40,6 @@ private:
 
 	static uint32_t convert_to_send(uint32_t number);
 
-	/* Konwertowanie liczby po odebraniu wiadomości */
-	static uint16_t convert_to_receive(uint16_t number);
-
-	static uint32_t convert_to_receive(uint32_t number);
-
 	/* Wstawianie napisu (bez jego długości) */
 	void insert_raw(const std::string &str);
 
@@ -66,13 +61,9 @@ private:
 	void insert(Player &player);
 
 	/* Odbieranie zgodnie z konwencją zadania  */
-	void receive(uint8_t &number);
+	uint8_t receive_u8();
 
-	void receive(uint16_t &number);
-
-	void receive(uint32_t &number);
-
-	void receive(std::string &str);
+	std::string receive_string();
 
 	/* Wstawianie eventu */
 	void insert_bomb_placed(struct BombPlaced &bomb_placed);
@@ -134,15 +125,17 @@ public:
 	/* Dopasowanie wielkości kontenerów. */
 	void adapt_size();
 
-	size_t insert_hello_message(struct Hello hello);
+	size_t insert_ServerMessage(ServerMessage &message);
 
-	void insert_message_to_clients();
+	ClientMessage receive_ClientMessage(size_t received_size);
 
 	/* Referencja do bufora odbierającego komunikaty */
 	char *get_receive() { return &receive_buffer[shift_index]; }
 
 	/* Referencja do bufora wysyłającego komunikaty */
 	char *get_send() { return &send_buffer[0]; }
+
+	size_t get_receive_size() { return receive_buffer.size(); }
 
 private:
 	std::vector<char> receive_buffer;

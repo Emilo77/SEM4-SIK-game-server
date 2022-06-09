@@ -4,37 +4,41 @@
 #include <iostream>
 #include <memory>
 #include <boost/asio.hpp>
-
+#include "GameRoom.h"
 #include "Buffer.h"
-#include "Game.h"
+
+class ServerConnection {
+public:
+	virtual ~ServerConnection() = default;
+	virtual void deliver(ServerMessage &msg) = 0;
+};
+
 
 using boost::asio::ip::tcp;
 
-class Connection : public std::enable_shared_from_this<Connection> {
+class Connection :
+		public ServerConnection,
+		public std::enable_shared_from_this<Connection> {
 
 public:
-	using pointer = std::shared_ptr<Connection>;
-
-	static pointer create(boost::asio::io_context &ioContext, Game &game) {
-		return pointer(new Connection(ioContext, game));
+	explicit Connection(tcp::socket socket, GameRoom &game_room)
+			: socket_(std::move(socket)),
+			  game_room(game_room) {
+		buffer.initialize(BUFFER_SIZE);
 	}
 
-	tcp::socket &Socket() {
-		return _socket;
-	}
+	void do_start();
 
-	void start();
+	void deliver(ServerMessage &message) override;
 
 private:
-	explicit Connection(boost::asio::io_context &ioContext, Game &game)
-			: game(game),
-			  _socket(ioContext) {
-		buffer.initialize(SMALL_BUFFER_SIZE);
-	}
+	void do_receive();
+
+	void handle_receive(size_t bytesTransferred);
 
 	Buffer buffer;
-	Game &game;
-	tcp::socket _socket;
+	tcp::socket socket_;
+	GameRoom &game_room;
 };
 
 

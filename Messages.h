@@ -83,8 +83,9 @@ typedef struct ServerMessage {
 
 	ServerMessage(ServerMessageToClientType type,
 	              std::variant<struct Hello, struct AcceptedPlayer,
-			              struct GameStarted, struct Turn, struct GameEnded>
-	              data) : type(type), data(std::move(data)) {}
+			              struct GameStarted, struct Turn, struct GameEnded> data)
+			: type(type),
+			  data(std::move(data)) {}
 
 } ServerMessage;
 
@@ -93,6 +94,11 @@ typedef struct ClientMessage {
 	player_id_t player_id;
 	ClientMessageToServerType type;
 	std::variant<std::string, Direction> data;
+
+	ClientMessage(ClientMessageToServerType type,
+	              std::variant<std::string, Direction> data)
+			: type(type),
+			data(std::move(data)) {}
 } ClientMessage;
 
 #endif //ZADANIE02_CLIENT_MESSAGES_H

@@ -10,6 +10,7 @@
 class ServerConnection {
 public:
 	virtual ~ServerConnection() = default;
+
 	virtual void deliver(ServerMessage &msg) = 0;
 };
 
@@ -20,6 +21,12 @@ class Connection :
 		public std::enable_shared_from_this<Connection> {
 
 public:
+	~Connection() override {
+		if (socket_.is_open()) {
+			socket_.close();
+		}
+	}
+
 	explicit Connection(tcp::socket socket, GameRoom &game_room)
 			: socket_(std::move(socket)),
 			  game_room(game_room) {

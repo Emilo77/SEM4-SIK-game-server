@@ -1,7 +1,7 @@
 #include "GameRoom.h"
 #include "Connection.h"
 
-void GameRoom::connect_to_game_room(gamer_ptr gamer) {
+void GameRoom::connect_to_game_room(const gamer_ptr& gamer) {
 	gamers_.insert(gamer);
 	auto message = ServerMessage(Hello, game_info.generate_Hello());
 

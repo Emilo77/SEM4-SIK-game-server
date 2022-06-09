@@ -17,7 +17,7 @@ public:
 			: parameters(parameters),
 			  game_info(game_info) {}
 
-	void connect_to_game_room(gamer_ptr gamer);
+	void connect_to_game_room(const gamer_ptr& gamer);
 
 	void leave(const gamer_ptr &gamer);
 

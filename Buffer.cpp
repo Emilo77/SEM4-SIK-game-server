@@ -209,6 +209,7 @@ void Buffer::insert_game_ended(struct GameEnded &game_ended) {
 
 size_t Buffer::insert_ServerMessage(ServerMessage &message) {
 	reset_send_index();
+	insert((uint8_t) message.type);
 	switch (message.type) {
 		case Hello:
 			insert_hello(std::get<struct Hello>(message.data));

@@ -137,6 +137,14 @@ public:
 
 	size_t get_receive_size() { return receive_buffer.size(); }
 
+	void print(size_t size) {
+		std::cerr << "size: " << size << std::endl;
+		for (size_t i = 0; i < size; i++) {
+			std::cerr << (int) send_buffer[i] << " | ";
+		}
+		std::cerr << std::endl;
+	}
+
 private:
 	std::vector<char> receive_buffer;
 	std::vector<char> send_buffer;

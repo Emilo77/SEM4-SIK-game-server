@@ -1,11 +1,16 @@
 #include "Connection.h"
 
 
-void Connection::do_start() {}
+void Connection::do_start() {
+	game_room.connect_to_game_room(shared_from_this());
+}
 
 void Connection::deliver(ServerMessage &message) {
 	/* Wkładamy wiadomość do bufora. */
 	size_t send = buffer.insert_ServerMessage(message);
+//	std:: cerr << message.type << std::endl;
+//
+//	buffer.print(30);
 
 	/* Wkładamy wiadomość do bufora. */
 	socket_.async_send(
@@ -20,7 +25,7 @@ void Connection::deliver(ServerMessage &message) {
 					game_room.leave(shared_from_this());
 
 				} else {
-					std::cerr << "Sent " << bytesTransferred << "bytes!\n";
+					std::cerr << "Sent " << bytesTransferred << " bytes!\n";
 				}
 			});
 }

@@ -127,7 +127,8 @@ public:
 
 	size_t insert_ServerMessage(ServerMessage &message);
 
-	ClientMessage receive_ClientMessage(size_t received_size);
+	ClientMessage receive_ClientMessage(size_t received_size,
+										std::optional<player_id_t> player_id);
 
 	/* Referencja do bufora odbierającego komunikaty */
 	char *get_receive() { return &receive_buffer[shift_index]; }

@@ -48,7 +48,7 @@ struct Hello {
 /* Wiadomość AcceptedPlayer */
 struct AcceptedPlayer {
 	player_id_t player_id{};
-	Player player{};
+	Player player;
 };
 
 /* Wiadomość GameStarted */

@@ -2,6 +2,7 @@
 
 
 void Connection::do_start() {
+	std::cerr << "Client " + name << " connected!" << std::endl;
 	game_room.connect_to_game_room(shared_from_this());
 }
 
@@ -26,6 +27,7 @@ void Connection::deliver(ServerMessage &message) {
 
 				} else {
 					std::cerr << "Sent " << bytesTransferred << " bytes!\n";
+					do_receive(); // może nie powinno być?
 				}
 			});
 }
@@ -69,7 +71,10 @@ void Connection::do_receive() {
 void Connection::handle_receive(size_t bytesTransferred) {
 	try {
 		/* Wyciągamy wiadomość z bufora. */
-		auto message = buffer.receive_ClientMessage(bytesTransferred);
+		auto message = buffer.receive_ClientMessage(bytesTransferred, player_id);
+
+		/* Wyciągamy wiadomość z bufora. */
+		last_message.emplace(message);
 
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);

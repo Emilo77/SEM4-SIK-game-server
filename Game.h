@@ -140,7 +140,9 @@ public:
 	/* Sprawdzenie, w jakim stanie jest gra. */
 	bool is_gameplay();
 
-	void accept_player(Player &player);
+	bool enaugh_players() { return players.size() >= players_count; }
+
+	player_id_t accept_player(Player &player);
 
 	void start_gameplay();
 

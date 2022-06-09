@@ -101,6 +101,10 @@ public:
 	std::string name;
 	std::string address;
 
+	Player(std::string &name, std::string address)
+			: name(name),
+			  address(std::move(address)) {}
+
 	[[nodiscard]] bool is_dead() const { return dead; }
 
 	void explode() { dead = true; }

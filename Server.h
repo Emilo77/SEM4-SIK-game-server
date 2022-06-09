@@ -22,7 +22,10 @@ class Server {
 public:
 	explicit Server(Game &game, ServerParameters &parameters) :
 			_acceptor(_io_context, tcp::endpoint(tcp::v6(), parameters.port)),
-			_game_room(parameters, game) {}
+			_game_room(parameters, game,
+			           boost::asio::steady_timer(_io_context,
+			                                     boost::asio::chrono::milliseconds(
+					                                     parameters.turn_duration))) {}
 
 	void run() {
 		try {

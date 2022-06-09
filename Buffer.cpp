@@ -231,7 +231,9 @@ size_t Buffer::insert_ServerMessage(ServerMessage &message) {
 	return get_send_size();
 }
 
-ClientMessage Buffer::receive_ClientMessage(size_t received_size) {
+ClientMessage Buffer::receive_ClientMessage(size_t received_size,
+											std::optional<player_id_t>
+											        player_id) {
 	/* Resetujemy index do czytania danych z bufora. */
 	reset_read_index();
 
@@ -279,6 +281,9 @@ ClientMessage Buffer::receive_ClientMessage(size_t received_size) {
         * dalej. */
 		throw e;
 	}
+
+	/* Dodajemy id gracza do wiadomości. */
+	clientMessage->player_id = player_id;
 
 	/* Jeżeli udało się wczytać wiadomość z danych z bufora,
 	 * przesuwamy index końca danych i index odbierania danych. */

@@ -170,8 +170,10 @@ bool Game::is_gameplay() {
 	return game_state == GameplayState;
 }
 
-void Game::accept_player(Player &player) {
-//	players.insert({player.get_id(), player});
+player_id_t Game::accept_player(Player &player) {
+	player_id_t new_id = id_generator.new_player_id();
+	players.insert({new_id, player});
+	return new_id;
 }
 
 void Game::start_gameplay() {

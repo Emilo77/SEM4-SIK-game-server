@@ -9,6 +9,10 @@
 #include <variant>
 #include <vector>
 #include <optional>
+#include <chrono>
+
+#define RANDOM_BASE 2147483647
+#define RANDOM_MULTIPLIER 48271
 
 using turn_id_t = uint16_t;
 using bomb_id_t = uint32_t;
@@ -18,17 +22,18 @@ using score_t = uint32_t;
 class RandomGenerator {
 	uint32_t seed{0};
 public:
-	  explicit RandomGenerator(std::optional<uint32_t> seed_option) {
+	explicit RandomGenerator(std::optional<uint32_t> seed_option) {
 		if (seed_option.has_value()) {
 			seed = seed_option.value();
 		} else {
-			seed = (uint32_t) time(nullptr);
+			seed = (uint32_t) std::chrono::system_clock::now()
+					.time_since_epoch().count();
 		}
 	}
 
 	uint32_t generate() {
 		uint32_t r = seed;
-		seed = (seed * 48271) % 2147483647;
+		seed = (seed * RANDOM_MULTIPLIER) % RANDOM_BASE;
 		return r;
 	}
 };
@@ -126,16 +131,17 @@ struct BombPlaced {
 /* Wydarzenie BombExploded. */
 struct BombExploded {
 	bomb_id_t bomb_id;
-	std::vector<player_id_t> robots_destroyed;
 	std::vector<Position> blocks_destroyed;
+	std::vector<player_id_t> robots_destroyed;
 
 	BombExploded() : bomb_id(0) {}
 
-	BombExploded(bomb_id_t bomb_id, std::vector<player_id_t> &robots_destroyed,
-	             std::vector<Position> &blocks_destroyed)
-				 : bomb_id(bomb_id),
-				 robots_destroyed(robots_destroyed),
-				 blocks_destroyed(blocks_destroyed) {}
+	BombExploded(bomb_id_t bomb_id,
+	             std::vector<Position> &blocks_destroyed,
+	             std::vector<player_id_t> &robots_destroyed)
+			: bomb_id(bomb_id),
+			  blocks_destroyed(blocks_destroyed),
+			  robots_destroyed(robots_destroyed) {}
 
 };
 

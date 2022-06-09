@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 
+/* Pomocnicza klasa do generowania identyfikatorów. */
 class IdGenerator {
 private:
 	uint16_t turn_id{0};
@@ -22,6 +23,8 @@ public:
 		player_id = 0;
 	}
 
+	[[nodiscard]] turn_id_t last_turn_id() const { return turn_id - 1; }
+
 	turn_id_t new_turn_id() { return turn_id++; }
 
 	bomb_id_t new_bomb_id() { return bomb_id++; }
@@ -33,25 +36,25 @@ public:
 class Field {
 private:
 	bool solid{false};
-	bool will_be_placed{false};
+	bool will_be_solid{false};
 	bool exploded{false};
 	bool bomb_placed{false};
 
 public:
 	/* Zaznaczenie, że pole jest blokiem. */
-	void make_block() { solid = true; }
+	void make_solid() { solid = true; }
 
 	/* Zaznaczenie, że pole jest powietrzem (nie jest blokiem). */
 	void make_air() { solid = false; }
 
 	/* Zaznaczenie, że na polu postawiono bombę w tej turze. */
-	void place_bomb() { bomb_placed = false; }
+	void place_bomb() { bomb_placed = true; }
 
 	/* Zaznaczenie, że pole eksplodowało w tej turze. */
 	void mark_exploded() { exploded = true; }
 
 	/* Zaznaczenie, że pole zostanie w tej turze postawione bombą. */
-	void mark_placed() { will_be_placed = true; }
+	void mark_placed() { will_be_solid = true; }
 
 	/* Zresetowanie eksplozji. */
 	void reset_exploded() { exploded = false; }
@@ -60,7 +63,7 @@ public:
 	void reset_bomb_placed() { bomb_placed = false; }
 
 	/* Zresetowanie zaznaczenia, że pole będzie blokiem. */
-	void reset_will_be_solid() { will_be_placed = false; }
+	void reset_will_be_solid() { will_be_solid = false; }
 
 	/* Sprawdzenie, czy pole jest blokiem. */
 	[[nodiscard]] bool is_solid() const { return solid; }
@@ -72,7 +75,7 @@ public:
 	[[nodiscard]] bool is_bomb_placed() const { return bomb_placed; }
 
 	/* Sprawdzenie, czy pole będzie blokiem w następnej turze. */
-	[[nodiscard]] bool will_be_solid() const { return will_be_placed; }
+	[[nodiscard]] bool will_be_placed() const { return will_be_solid; }
 };
 
 /* Pomocnicza klasa planszy, dzięki niej jesteśmy w stanie szybko
@@ -89,7 +92,7 @@ public:
 	/* Ustawiamy planszę na odpowiedni rozmiar i czyścimy ją. */
 	void reset(uint16_t size_x, uint16_t size_y);
 
-	/* Aktualizacja stanu pól po eksplozjach turze. */
+	/* Aktualizacja stanu pól po eksplozjach w turze. */
 	void apply_explosions();
 
 	/* Aktualizacja stanu pól po stawianiu bloków w turze. */
@@ -159,12 +162,13 @@ private:
 	/* Dopasowanie wielkości kontenerów na podstawie graczy. */
 	void initialize_containers();
 
-	void kill_players_at(Position position, std::vector<player_id_t>
-	&destroyed);
+	void
+	kill_players_at(Position position, std::vector<player_id_t> &destroyed);
 
 	/* Zapisanie eksplozji pojedynczej bomby. */
-	void mark_explosions(bomb_id_t id, std::vector<Position>
-	&blocks_destroyed, std::vector<player_id_t> &players_destroyed);
+	void mark_explosions(bomb_id_t id,
+	                     std::vector<Position> &blocks_destroyed,
+	                     std::vector<player_id_t> &players_destroyed);
 
 	/* Zapisanie eksplozji pojedynczej bomby w danym kierunku. */
 	void mark_explosions_in_direction(Position bomb_pos, Direction direction,
@@ -201,7 +205,10 @@ private:
 	struct GameStarted generate_GameStarted();
 
 	/* Generowanie wiadomości Turn dla wszystkich klientów. */
-	struct Turn generate_Turn();
+	struct Turn generate_Turn(uint16_t number);
+
+	/* Generowanie wiadomości Turn dla wszystkich klientów. */
+	struct Turn generate_last_Turn();
 
 	/* Generowanie wiadomości GameEnded dla wszystkich klientów. */
 	struct GameEnded generate_GameEnded();

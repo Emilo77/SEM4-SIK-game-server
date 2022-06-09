@@ -40,8 +40,8 @@ void Board::apply_blocks() {
 			/* Jeżeli pole eksplodowało w aktualnej turze, dodajemy jego
 			 * pozycję do listy, zmieniamy pole na nie-blok
 			 * oraz resetujemy stan eksplozji. */
-			if (row.will_be_solid()) {
-				row.make_block();
+			if (row.will_be_placed()) {
+				row.make_solid();
 				row.reset_will_be_solid();
 			}
 		}
@@ -116,12 +116,12 @@ void Game::mark_explosions(bomb_id_t id, std::vector<Position>
 
 	/* Oznaczamy pole na pozycji bomby. */
 	board.at(bomb_position).mark_exploded();
+	kill_players_at(bomb_position, players_destroyed);
 
 	/* Jeżeli bomba eksplodowała na bloku, kończymy działanie,
 	 * bomba rozsadza tylko pojedynczy blok, na którym została położona. */
 	if (board.at(bomb_position).is_solid()) {
 		blocks_destroyed.push_back(bomb_position);
-		kill_players_at(bomb_position, players_destroyed);
 		return;
 	}
 
@@ -199,7 +199,7 @@ void Game::start_gameplay() {
 
 		/* Losujemy pozycję do postawienia bloku. */
 		Position new_position = random_position();
-		board.at(new_position).make_block();
+		board.at(new_position).make_solid();
 
 		/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
 		struct BlockPlaced data(new_position);
@@ -221,16 +221,16 @@ void Game::simulate_turn() {
 		/* Jeżeli bomba powinna eksplodować, symulujemy eksplozję. */
 		if (bomb.second.ready_to_explode()) {
 
-			/* Inicjujemy kontenery dla zniszczonych graczy i bloków. */
-			std::vector<player_id_t> players_exploded;
+			/* Inicjujemy kontenery dla zniszczonych bloków i graczy. */
 			std::vector<Position> blocks_exploded;
+			std::vector<player_id_t> players_exploded;
 
 			/* Wyznaczamy zniszczonych graczy i zniszczone bloki. */
 			mark_explosions(bomb.first, blocks_exploded, players_exploded);
 
 			/* Dodajemy zdarzenie BombExploded do kontenera zdarzeń. */
-			struct BombExploded data(bomb.first, players_exploded,
-			                         blocks_exploded);
+			struct BombExploded data(bomb.first, blocks_exploded,
+			                         players_exploded);
 			new_events.emplace_back(BombExploded, data);
 
 			/* Zaznaczamy, że należy usunąć bombę. */
@@ -250,10 +250,10 @@ void Game::simulate_turn() {
 	for (auto &player: players) {
 		/* Jeżeli gracz */
 		if (!player.second.is_dead()) {
-			//obsłuż ruch gracza
+			//obsłuż ruch gracza i dodaj odpowiednie zdarzenie do listy
 
-		/* Jeżeli gracz eksplodował w tej turze,
-		 * przenosimy go na losową pozycję i ignorujemy jego ruch. */
+			/* Jeżeli gracz eksplodował w tej turze,
+			 * przenosimy go na losową pozycję i ignorujemy jego ruch. */
 		} else {
 			Position new_position = random_position();
 			player_positions.at(player.first) = new_position;
@@ -283,8 +283,17 @@ struct GameStarted Game::generate_GameStarted() {
 	return {players};
 }
 
-struct Turn Game::generate_Turn() {
+struct Turn Game::generate_Turn(uint16_t number) {
+	if (number >= turns.size()) {
+		std::cerr << "Nie znaleziono tury!\n";
+		exit(420); // potem do usunięcia
+	}
 
+	return turns[number];
+}
+
+struct Turn Game::generate_last_Turn() {
+	return turns.at(id_generator.last_turn_id());
 }
 
 std::optional<Event> Game::apply_Join(/* ???*/) {
@@ -325,7 +334,7 @@ std::optional<Event> Game::apply_BombPlaced(player_id_t player_id) {
 
 		return new_event;
 	}
-
+	return {};
 }
 
 std::optional<Event>
@@ -366,6 +375,7 @@ Game::apply_PlayerMoved(player_id_t player_id, Direction direction) {
 
 		return new_event;
 	}
+	return {};
 }
 
 std::optional<Event> Game::apply_BlockPlaced(player_id_t player_id) {
@@ -383,7 +393,7 @@ std::optional<Event> Game::apply_BlockPlaced(player_id_t player_id) {
 	/* Sprawdzamy, czy pole nie jest już blokiem i czy w tej turze ktoś nie
 	 * postawił już na nim bloku. */
 	if (!board.at(block_position).is_solid()
-	    && !board.at(block_position).will_be_solid()) {
+	    && !board.at(block_position).will_be_placed()) {
 
 		/* Oznaczamy pole, że zamieni się w blok w następnej turze. */
 		board.at(block_position).mark_placed();
@@ -407,11 +417,11 @@ std::optional<Event> Game::apply_client_message(ClientMessage &message) {
 			case Join:
 				break;
 			case PlaceBomb:
-				return apply_BombPlaced(message.player_id);
+				return apply_BombPlaced(message.player_id.value());
 			case PlaceBlock:
-				return apply_BlockPlaced(message.player_id);
+				return apply_BlockPlaced(message.player_id.value());
 			case Move:
-				return apply_PlayerMoved(message.player_id,
+				return apply_PlayerMoved(message.player_id.value(),
 				                         std::get<Direction>(message.data));
 		}
 	}

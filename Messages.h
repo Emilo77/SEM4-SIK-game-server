@@ -91,14 +91,14 @@ typedef struct ServerMessage {
 
 /* Struktura wiadomości wysyłanej od klienta do serwera. */
 typedef struct ClientMessage {
-	player_id_t player_id;
+	std::optional<player_id_t> player_id;
 	ClientMessageToServerType type;
 	std::variant<std::string, Direction> data;
 
 	ClientMessage(ClientMessageToServerType type,
 	              std::variant<std::string, Direction> data)
 			: type(type),
-			data(std::move(data)) {}
+			  data(std::move(data)) {}
 } ClientMessage;
 
 #endif //ZADANIE02_CLIENT_MESSAGES_H

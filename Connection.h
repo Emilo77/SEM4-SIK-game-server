@@ -13,7 +13,6 @@ public:
 	virtual void deliver(ServerMessage &msg) = 0;
 };
 
-
 using boost::asio::ip::tcp;
 
 class Connection :

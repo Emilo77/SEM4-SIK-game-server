@@ -13,7 +13,6 @@ void Connection::do_start() {
 void Connection::deliver(ServerMessage &message) {
 	/* Wkładamy wiadomość do bufora. */
 	size_t send = buffer.insert_ServerMessage(message);
-	std:: cerr << message.type << std::endl;
 
 	buffer.print(60);
 
@@ -28,9 +27,6 @@ void Connection::deliver(ServerMessage &message) {
 				if (error) {
 					std::cerr << "Failed to send message!\n";
 					game_room.leave(shared_from_this());
-
-				} else {
-					std::cerr << "Sent " << bytesTransferred << " bytes!\n";
 				}
 			});
 }
@@ -44,8 +40,6 @@ void Connection::do_receive() {
 			                      size_t bytesTransferred) {
 		                      /* Otrzymano poprawnie komunikat. */
 		                      if (!error) {
-			                      std::cerr << "Received " << bytesTransferred
-			                                << "bytes!\n";
 
 			                      /* Obsługujemy otrzymaną wiadomość. */
 			                      handle_receive(bytesTransferred);
@@ -76,6 +70,7 @@ void Connection::handle_receive(size_t bytesTransferred) {
 		/* Wyciągamy wiadomość z bufora. */
 		auto message = buffer.receive_ClientMessage(bytesTransferred, player_id);
 
+		std::cerr << "Otrzymano " << message.type << std::endl;
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);
 

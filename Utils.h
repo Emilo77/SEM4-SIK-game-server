@@ -19,6 +19,7 @@ using turn_id_t = uint16_t;
 using bomb_id_t = uint32_t;
 using player_id_t = uint8_t;
 using score_t = uint32_t;
+using coordinate_t = uint16_t;
 
 class RandomGenerator {
 	uint32_t seed;

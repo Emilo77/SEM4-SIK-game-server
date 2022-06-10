@@ -132,31 +132,46 @@ void Buffer::insert_map_scores(std::map<player_id_t, score_t> &scores) {
 }
 
 void Buffer::insert_bomb_placed(struct BombPlaced &bomb_placed) {
+	std:: cerr << "Event: BombPlaced\n";
+	std:: cerr << "Bomb id: " << bomb_placed.bomb_id << std::endl;
+	std:: cerr << "Position: " << bomb_placed.position.x <<
+	" " << bomb_placed.position.y << std::endl;
+
 	insert(bomb_placed.bomb_id);
 	insert(bomb_placed.position);
 }
 
 void Buffer::insert_bomb_exploded(struct BombExploded &bomb_exploded) {
+	std:: cerr << "Event: BombExploded\n";
+	std:: cerr << "Bomb id: " << bomb_exploded.bomb_id << std::endl;
+	std:: cerr << "...\n";
+
 	insert(bomb_exploded.bomb_id);
 	insert_list_player_ids(bomb_exploded.robots_destroyed);
 	insert_list_positions(bomb_exploded.blocks_destroyed);
 }
 
 void Buffer::insert_player_moved(struct PlayerMoved &player_moved) {
-	std:: cerr << "Insertowanie player_moved: " << player_moved.player_id <<
-	" " << player_moved.position.x << " " << player_moved.position.y <<
-	std::endl;
+	std:: cerr << "Event: PlayerMoved\n";
+	std:: cerr << "Player id: " << player_moved.player_id << std::endl;
+	std:: cerr << "Position: " << player_moved.position.x <<
+	           " " << player_moved.position.y << std::endl;
 
 	insert(player_moved.player_id);
 	insert(player_moved.position);
 }
 
 void Buffer::insert_block_placed(struct BlockPlaced &block_placed) {
+	std:: cerr << "Event: BlockPlaced\n";
+	std:: cerr << "Position: " << block_placed.position.x <<
+	           " " << block_placed.position.y << std::endl;
+
 	insert(block_placed.position);
 }
 
 void Buffer::insert_event(Event &event) {
-	std:: cerr<< "Event type: " << event.type << std::endl;
+	std::cerr << std::endl;
+	insert((uint8_t) event.type);
 	switch (event.type) {
 		case BombPlaced:
 			insert_bomb_placed(std::get<BombPlaced>(event.data));
@@ -165,13 +180,6 @@ void Buffer::insert_event(Event &event) {
 			insert_bomb_exploded(std::get<BombExploded>(event.data));
 			break;
 		case PlayerMoved:
-			std:: cerr << "id: " << std::get<PlayerMoved>(event.data)
-			        .player_id << std::endl;
-			std:: cerr << "position_x: " << std::get<PlayerMoved>(event.data)
-					.position.x << std::endl;
-			std:: cerr << "position_y: " << std::get<PlayerMoved>(event.data)
-					.position.y << std::endl;
-
 			insert_player_moved(std::get<PlayerMoved>(event.data));
 			break;
 		case BlockPlaced:
@@ -181,13 +189,9 @@ void Buffer::insert_event(Event &event) {
 }
 
 void Buffer::insert_list_events(std::vector<Event> &vector) {
-	try {
-		insert((uint32_t) vector.size());
-		for (auto &event: vector) {
-			insert_event(event);
-		}
-	} catch (IncompleteMessage &e) {
-		throw e;
+	insert((uint32_t) vector.size());
+	for (auto &event: vector) {
+		insert_event(event);
 	}
 }
 
@@ -211,8 +215,13 @@ void Buffer::insert_game_started(struct GameStarted &game_started) {
 }
 
 void Buffer::insert_turn(struct Turn &turn) {
+	std::cerr << std::endl;
+	std::cerr<<"Tura nr " << turn.turn_number << std::endl;
+	std::cerr<<"Ilość eventów: " << turn.events.size() << std::endl;
+
 	insert(turn.turn_number);
 	insert_list_events(turn.events);
+	std::cerr << std::endl;
 }
 
 void Buffer::insert_game_ended(struct GameEnded &game_ended) {
@@ -244,8 +253,8 @@ size_t Buffer::insert_ServerMessage(ServerMessage &message) {
 }
 
 ClientMessage Buffer::receive_ClientMessage(size_t received_size,
-											std::optional<player_id_t>
-											        player_id) {
+                                            std::optional<player_id_t>
+                                            player_id) {
 	/* Resetujemy index do czytania danych z bufora. */
 	reset_read_index();
 
@@ -263,7 +272,7 @@ ClientMessage Buffer::receive_ClientMessage(size_t received_size,
 		message = receive_u8();
 		check_client_message_type(message);
 
-		switch((ClientMessageToServerType) message) {
+		switch ((ClientMessageToServerType) message) {
 			case Join:
 				data = receive_string();
 				clientMessage.emplace(Join, data);

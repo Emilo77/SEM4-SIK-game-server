@@ -23,8 +23,6 @@ public:
 		player_id = 0;
 	}
 
-	[[nodiscard]] turn_id_t last_turn_id() const { return turn_id - 1; }
-
 	turn_id_t new_turn_id() { return turn_id++; }
 
 	bomb_id_t new_bomb_id() { return bomb_id++; }
@@ -126,13 +124,12 @@ private:
 	uint16_t bomb_timer;
 	uint16_t initial_blocks;
 
-	std::vector<struct Turn> turns;
-
 	Board board;
 	std::map<player_id_t, Player> players;
 	std::map<player_id_t, Position> player_positions;
 	std::map<player_id_t, score_t> scores;
 	std::map<bomb_id_t, Bomb> bombs;
+	std::vector<struct Turn> turns;
 
 	IdGenerator id_generator;
 
@@ -140,13 +137,18 @@ public:
 	/* Sprawdzenie, w jakim stanie jest gra. */
 	bool is_gameplay();
 
+	/* Sprawdzenie, czy powinniśmy zakończyć grę. */
+	bool should_end() {  return turns.size() > game_length; }
+
 	bool enough_players() { return players.size() >= players_count; }
 
 	player_id_t accept_player(Player &player);
 
 	void start_gameplay();
 
-	void simulate_turn();
+	void simulate_turn(std::map<player_id_t, ClientMessage> &messages);
+
+	void reset_all();
 
 	/* Generowanie wiadomości Hello dla połączonego klienta */
 	struct Hello generate_Hello();
@@ -162,6 +164,10 @@ public:
 
 	/* Generowanie wiadomości GameEnded dla wszystkich klientów. */
 	struct GameEnded generate_GameEnded();
+
+	/* Zmiana stanu gry. */
+	std::optional<Event>
+	apply_client_message(ClientMessage &message);
 
 private:
 
@@ -204,10 +210,6 @@ private:
 	/* Aktualizacja stanu gry na podstawie zdarzenia BlockPlaced. */
 	std::optional<Event>
 	apply_BlockPlaced(player_id_t player_id);
-
-	/* Zmiana stanu gry. */
-	std::optional<Event>
-	apply_client_message(ClientMessage &message);
 };
 
 

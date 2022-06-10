@@ -67,7 +67,6 @@ Position Game::random_position() {
 	uint16_t new_x = random.generate() % size_x;
 	uint16_t new_y = random.generate() % size_y;
 
-	std::cerr << new_x << " " << new_y << std::endl;
 	return {new_x, new_y};
 }
 
@@ -77,11 +76,11 @@ bool Game::is_correct_position(Position position) const {
 }
 
 void Game::clear_containers() {
-	id_generator.reset();
 	players.clear();
 	player_positions.clear();
-	bombs.clear();
 	scores.clear();
+	bombs.clear();
+	turns.clear();
 }
 
 void Game::initialize_containers() {
@@ -187,8 +186,6 @@ void Game::start_gameplay() {
 	/* Nadajemy graczom domyślne pozycje i wyniki. */
 	initialize_containers();
 
-	std::cerr << "Weszło 1\n";
-
 	/* Inicjujemy kontener na zdarzenia. */
 	std::vector<Event> new_events;
 
@@ -198,16 +195,10 @@ void Game::start_gameplay() {
 		Position new_position = random_position();
 		player_positions.at(player.first).change(new_position);
 
-		std::cerr << "Weszło 2\n";
-
-		std::cerr << "randomowa pozycja_x: " << new_position.x << std::endl;
-		std::cerr << "randomowa pozycja_y: " << new_position.x << std::endl;
-
 		/* Dodajemy zdarzenie PlayerMoved do kontenera zdarzeń. */
 		struct PlayerMoved data(player.first, new_position);
 		new_events.emplace_back(PlayerMoved, data);
 
-		std::cerr << "Weszło 3\n";
 	}
 
 	for (int i = 0; i < initial_blocks; i++) {
@@ -216,22 +207,16 @@ void Game::start_gameplay() {
 		Position new_position = random_position();
 		board.at(new_position).make_solid();
 
-		std::cerr << "Weszło es\n";
-
 		/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
 		struct BlockPlaced data(new_position);
 		new_events.emplace_back(BlockPlaced, data);
-
-		std::cerr << "Weszło 5\n";
 	}
 
 	/* Dodajemy turę do kontenera tur. */
 	turns.emplace_back(id_generator.new_turn_id(), new_events);
-
-	std::cerr << "Ilość eventów: " << new_events.size() << '\n';
 }
 
-void Game::simulate_turn() {
+void Game::simulate_turn(std::map<player_id_t, ClientMessage> &messages) {
 
 	std::vector<Event> new_events;
 	std::vector<bomb_id_t> bombs_to_remove;
@@ -271,7 +256,15 @@ void Game::simulate_turn() {
 	for (auto &player: players) {
 		/* Jeżeli gracz */
 		if (!player.second.is_dead()) {
-			//obsłuż ruch gracza i dodaj odpowiednie zdarzenie do listy
+
+			/* Obsługujemy gracza i dodajemy odpowiednie zdarzenie do listy. */
+			if(messages.find(player.first) != messages.end()) {
+				auto event = apply_client_message(messages.at(player.first));
+				if (event.has_value()) {
+					/* Dodajemy event do listy. */
+					new_events.emplace_back(event.value());
+				}
+			}
 
 			/* Jeżeli gracz eksplodował w tej turze,
 			 * przenosimy go na losową pozycję i ignorujemy jego ruch. */
@@ -295,6 +288,13 @@ void Game::simulate_turn() {
 	turns.emplace_back(id_generator.new_turn_id(), new_events);
 }
 
+void Game::reset_all() {
+	game_state = LobbyState;
+	clear_containers();
+	board.reset(size_x, size_y);
+	id_generator.reset();
+}
+
 struct Hello Game::generate_Hello() {
 	return {server_name, players_count, size_x, size_y, game_length,
 	        explosion_radius, bomb_timer};
@@ -314,7 +314,11 @@ struct Turn Game::generate_Turn(uint16_t number) {
 }
 
 struct Turn Game::generate_last_Turn() {
-	return turns.at(id_generator.last_turn_id());
+	return turns.at(turns.size() - 1);
+}
+
+struct GameEnded Game::generate_GameEnded() {
+	return {scores};
 }
 
 std::optional<Event> Game::apply_BombPlaced(player_id_t player_id) {

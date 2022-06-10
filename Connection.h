@@ -20,6 +20,8 @@ public:
 	virtual std::optional<player_id_t> get_id() { return {}; }
 
 	virtual void set_id(player_id_t id) {}
+
+	virtual void remove_id() {}
 };
 
 using boost::asio::ip::tcp;
@@ -57,6 +59,8 @@ public:
 	std::optional<player_id_t> get_id() override { return player_id; }
 
 	void set_id(player_id_t id) override { player_id.emplace(id); }
+
+	void remove_id() override { player_id.reset(); }
 
 private:
 	void do_receive();

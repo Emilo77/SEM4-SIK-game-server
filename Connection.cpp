@@ -70,7 +70,6 @@ void Connection::handle_receive(size_t bytesTransferred) {
 		/* Wyciągamy wiadomość z bufora. */
 		auto message = buffer.receive_ClientMessage(bytesTransferred, player_id);
 
-		std::cerr << "Otrzymano " << message.type << std::endl;
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);
 

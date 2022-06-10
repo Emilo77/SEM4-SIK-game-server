@@ -28,6 +28,7 @@ void Board::apply_explosions() {
 			if (row.is_exploded()) {
 				row.make_air();
 				row.reset_exploded();
+				row.reset_bomb_placed();
 			}
 		}
 	}
@@ -304,10 +305,10 @@ struct GameStarted Game::generate_GameStarted() {
 	return {players};
 }
 
-struct Turn Game::generate_Turn(uint16_t number) {
+struct Turn Game::generate_Turn(size_t number) {
 	if (number >= turns.size()) {
 		std::cerr << "Nie znaleziono tury!\n";
-		exit(420); // potem do usunięcia
+		exit(420);
 	}
 
 	return turns[number];

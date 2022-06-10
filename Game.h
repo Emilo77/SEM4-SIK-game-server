@@ -156,8 +156,10 @@ public:
 	/* Generowanie wiadomości GameStarted dla wszystkich klientów. */
 	struct GameStarted generate_GameStarted();
 
+	size_t get_turns_size() { return turns.size(); }
+
 	/* Generowanie wiadomości Turn dla wszystkich klientów. */
-	struct Turn generate_Turn(uint16_t number);
+	struct Turn generate_Turn(size_t number);
 
 	/* Generowanie wiadomości Turn dla wszystkich klientów. */
 	struct Turn generate_last_Turn();

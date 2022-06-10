@@ -23,6 +23,10 @@ public:
 
 	void connect_to_game_room(const gamer_ptr &gamer);
 
+	void send_all_turns(const gamer_ptr &gamer);
+
+	void send_all_accepted_players(const gamer_ptr &gamer);
+
 	void leave(const gamer_ptr &gamer);
 
 	void get_message(const gamer_ptr &gamer, ClientMessage &message);
@@ -41,6 +45,7 @@ private:
 	std::set<gamer_ptr> gamers_;
 	std::map<player_id_t, ClientMessage> last_messages;
 	boost::asio::steady_timer timer;
+	std::vector<ServerMessage> accepted_players_messages;
 
 	ServerParameters parameters;
 	Game game_info;

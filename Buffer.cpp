@@ -143,6 +143,10 @@ void Buffer::insert_bomb_exploded(struct BombExploded &bomb_exploded) {
 }
 
 void Buffer::insert_player_moved(struct PlayerMoved &player_moved) {
+	std:: cerr << "Insertowanie player_moved: " << player_moved.player_id <<
+	" " << player_moved.position.x << " " << player_moved.position.y <<
+	std::endl;
+
 	insert(player_moved.player_id);
 	insert(player_moved.position);
 }
@@ -152,6 +156,7 @@ void Buffer::insert_block_placed(struct BlockPlaced &block_placed) {
 }
 
 void Buffer::insert_event(Event &event) {
+	std:: cerr<< "Event type: " << event.type << std::endl;
 	switch (event.type) {
 		case BombPlaced:
 			insert_bomb_placed(std::get<BombPlaced>(event.data));
@@ -160,6 +165,13 @@ void Buffer::insert_event(Event &event) {
 			insert_bomb_exploded(std::get<BombExploded>(event.data));
 			break;
 		case PlayerMoved:
+			std:: cerr << "id: " << std::get<PlayerMoved>(event.data)
+			        .player_id << std::endl;
+			std:: cerr << "position_x: " << std::get<PlayerMoved>(event.data)
+					.position.x << std::endl;
+			std:: cerr << "position_y: " << std::get<PlayerMoved>(event.data)
+					.position.y << std::endl;
+
 			insert_player_moved(std::get<PlayerMoved>(event.data));
 			break;
 		case BlockPlaced:

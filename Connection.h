@@ -7,6 +7,8 @@
 #include "GameRoom.h"
 #include "Buffer.h"
 
+#define NO_BYTES 0
+
 class ServerConnection {
 public:
 	virtual ~ServerConnection() = default;
@@ -63,7 +65,6 @@ private:
 
 	Buffer buffer;
 	tcp::socket socket_;
-	std::optional<ClientMessage> last_message;
 
 	std::optional<player_id_t> player_id;
 	std::string name;

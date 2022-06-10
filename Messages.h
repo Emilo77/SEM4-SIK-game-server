@@ -49,6 +49,10 @@ struct Hello {
 struct AcceptedPlayer {
 	player_id_t player_id{};
 	Player player;
+
+	AcceptedPlayer(player_id_t id, Player player)
+			: player_id(id),
+			  player(std::move(player)) {}
 };
 
 /* Wiadomość GameStarted */

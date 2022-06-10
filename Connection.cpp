@@ -1,17 +1,21 @@
 #include "Connection.h"
 
-
 void Connection::do_start() {
 	std::cerr << "Client " + name << " connected!" << std::endl;
+
+	/* Powiadamiamy pokój gry, że się połączyliśmy. */
 	game_room.connect_to_game_room(shared_from_this());
+
+	/* Rozpoczynamy odbieranie wiadomości. */
+	do_receive();
 }
 
 void Connection::deliver(ServerMessage &message) {
 	/* Wkładamy wiadomość do bufora. */
 	size_t send = buffer.insert_ServerMessage(message);
-//	std:: cerr << message.type << std::endl;
-//
-//	buffer.print(30);
+	std:: cerr << message.type << std::endl;
+
+	buffer.print(60);
 
 	/* Wkładamy wiadomość do bufora. */
 	socket_.async_send(
@@ -27,7 +31,6 @@ void Connection::deliver(ServerMessage &message) {
 
 				} else {
 					std::cerr << "Sent " << bytesTransferred << " bytes!\n";
-					do_receive(); // może nie powinno być?
 				}
 			});
 }
@@ -73,13 +76,10 @@ void Connection::handle_receive(size_t bytesTransferred) {
 		/* Wyciągamy wiadomość z bufora. */
 		auto message = buffer.receive_ClientMessage(bytesTransferred, player_id);
 
-		/* Wyciągamy wiadomość z bufora. */
-		last_message.emplace(message);
-
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);
 
-		handle_receive(0);
+		handle_receive(NO_BYTES);
 
 	} catch (IncompleteMessage &e) {
 		/* W przypadku niekompletnej wiadomości oczekujemy asynchronicznie na

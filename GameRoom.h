@@ -26,6 +26,8 @@ public:
 
 	void get_message(const gamer_ptr &gamer, ClientMessage &message);
 
+	void send_to_all(ServerMessage &message);
+
 	void start_game();
 
 private:

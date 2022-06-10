@@ -64,9 +64,10 @@ static inline std::pair<int, int> direction_to_pair(Direction direction) {
 }
 
 Position Game::random_position() {
-	uint16_t new_x = (uint16_t) random.generate() % size_x;
-	uint16_t new_y = (uint16_t) random.generate() % size_y;
+	uint16_t new_x = random.generate() % size_x;
+	uint16_t new_y = random.generate() % size_y;
 
+	std::cerr << new_x << " " << new_y << std::endl;
 	return {new_x, new_y};
 }
 
@@ -180,8 +181,13 @@ void Game::start_gameplay() {
 	/* Zmieniamy stan gry na Gameplay. */
 	game_state = GameplayState;
 
+	/* Resetujemy planszę. */
+	board.reset(size_x, size_y);
+
 	/* Nadajemy graczom domyślne pozycje i wyniki. */
 	initialize_containers();
+
+	std::cerr << "Weszło 1\n";
 
 	/* Inicjujemy kontener na zdarzenia. */
 	std::vector<Event> new_events;
@@ -192,9 +198,16 @@ void Game::start_gameplay() {
 		Position new_position = random_position();
 		player_positions.at(player.first).change(new_position);
 
+		std::cerr << "Weszło 2\n";
+
+		std::cerr << "randomowa pozycja_x: " << new_position.x << std::endl;
+		std::cerr << "randomowa pozycja_y: " << new_position.x << std::endl;
+
 		/* Dodajemy zdarzenie PlayerMoved do kontenera zdarzeń. */
 		struct PlayerMoved data(player.first, new_position);
 		new_events.emplace_back(PlayerMoved, data);
+
+		std::cerr << "Weszło 3\n";
 	}
 
 	for (int i = 0; i < initial_blocks; i++) {
@@ -203,13 +216,19 @@ void Game::start_gameplay() {
 		Position new_position = random_position();
 		board.at(new_position).make_solid();
 
+		std::cerr << "Weszło es\n";
+
 		/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
 		struct BlockPlaced data(new_position);
 		new_events.emplace_back(BlockPlaced, data);
+
+		std::cerr << "Weszło 5\n";
 	}
 
 	/* Dodajemy turę do kontenera tur. */
 	turns.emplace_back(id_generator.new_turn_id(), new_events);
+
+	std::cerr << "Ilość eventów: " << new_events.size() << '\n';
 }
 
 void Game::simulate_turn() {
@@ -296,12 +315,6 @@ struct Turn Game::generate_Turn(uint16_t number) {
 
 struct Turn Game::generate_last_Turn() {
 	return turns.at(id_generator.last_turn_id());
-}
-
-std::optional<Event> Game::apply_Join(/* ???*/) {
-
-	std::optional<Event> new_event;
-
 }
 
 std::optional<Event> Game::apply_BombPlaced(player_id_t player_id) {
@@ -412,7 +425,7 @@ std::optional<Event> Game::apply_BlockPlaced(player_id_t player_id) {
 std::optional<Event> Game::apply_client_message(ClientMessage &message) {
 	if (game_state == LobbyState) {
 		if (message.type == Join) {
-			return apply_Join();
+			return {};
 		}
 	} else {
 		switch (message.type) {

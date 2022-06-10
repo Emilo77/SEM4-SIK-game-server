@@ -11,7 +11,7 @@
 /* Pomocnicza klasa do generowania identyfikatorów. */
 class IdGenerator {
 private:
-	uint16_t turn_id{0};
+	turn_id_t turn_id{0};
 	bomb_id_t bomb_id{0};
 	player_id_t player_id{0};
 
@@ -140,7 +140,7 @@ public:
 	/* Sprawdzenie, w jakim stanie jest gra. */
 	bool is_gameplay();
 
-	bool enaugh_players() { return players.size() >= players_count; }
+	bool enough_players() { return players.size() >= players_count; }
 
 	player_id_t accept_player(Player &player);
 
@@ -150,6 +150,18 @@ public:
 
 	/* Generowanie wiadomości Hello dla połączonego klienta */
 	struct Hello generate_Hello();
+
+	/* Generowanie wiadomości GameStarted dla wszystkich klientów. */
+	struct GameStarted generate_GameStarted();
+
+	/* Generowanie wiadomości Turn dla wszystkich klientów. */
+	struct Turn generate_Turn(uint16_t number);
+
+	/* Generowanie wiadomości Turn dla wszystkich klientów. */
+	struct Turn generate_last_Turn();
+
+	/* Generowanie wiadomości GameEnded dla wszystkich klientów. */
+	struct GameEnded generate_GameEnded();
 
 private:
 
@@ -183,10 +195,6 @@ private:
 
 	/* Aktualizacja stanu gry na podstawie zdarzenia BombPlaced. */
 	std::optional<Event>
-	apply_Join(/* ???*/);
-
-	/* Aktualizacja stanu gry na podstawie zdarzenia BombPlaced. */
-	std::optional<Event>
 	apply_BombPlaced(player_id_t player_id);
 
 	/* Aktualizacja stanu gry na podstawie zdarzenia PlayerMoved. */
@@ -200,20 +208,6 @@ private:
 	/* Zmiana stanu gry. */
 	std::optional<Event>
 	apply_client_message(ClientMessage &message);
-
-	struct AcceptedPlayer generate_AcceptedPlayer();
-
-	/* Generowanie wiadomości GameStarted dla wszystkich klientów. */
-	struct GameStarted generate_GameStarted();
-
-	/* Generowanie wiadomości Turn dla wszystkich klientów. */
-	struct Turn generate_Turn(uint16_t number);
-
-	/* Generowanie wiadomości Turn dla wszystkich klientów. */
-	struct Turn generate_last_Turn();
-
-	/* Generowanie wiadomości GameEnded dla wszystkich klientów. */
-	struct GameEnded generate_GameEnded();
 };
 
 

@@ -10,6 +10,7 @@
 #include <vector>
 #include <optional>
 #include <chrono>
+#include <random>
 
 #define RANDOM_BASE 2147483647
 #define RANDOM_MULTIPLIER 48271
@@ -20,7 +21,8 @@ using player_id_t = uint8_t;
 using score_t = uint32_t;
 
 class RandomGenerator {
-	uint32_t seed{0};
+	uint32_t seed;
+	std::minstd_rand random;
 public:
 	explicit RandomGenerator(std::optional<uint32_t> seed_option) {
 		if (seed_option.has_value()) {
@@ -29,12 +31,12 @@ public:
 			seed = (uint32_t) std::chrono::system_clock::now()
 					.time_since_epoch().count();
 		}
+
+		random.seed(seed);
 	}
 
-	uint32_t generate() {
-		uint32_t r = seed;
-		seed = (seed * RANDOM_MULTIPLIER) % RANDOM_BASE;
-		return r;
+	uint64_t generate() {
+		return random();
 	}
 };
 

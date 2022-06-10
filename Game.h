@@ -132,12 +132,16 @@ public:
 
 	bool enough_players() { return players.size() >= players_count; }
 
+	/* Akceptacja gracza do rozgrywki. */
 	player_id_t accept_player(Player &player);
 
+	/* Start rozgrywki. */
 	void start_gameplay();
 
+	/* Symulacja tury. */
 	void simulate_turn(std::map<player_id_t, ClientMessage> &messages);
 
+	/* Resetowanie całego statusu gry. */
 	void reset_all();
 
 	/* Generowanie wiadomości Hello dla połączonego klienta */
@@ -146,6 +150,7 @@ public:
 	/* Generowanie wiadomości GameStarted dla wszystkich klientów. */
 	struct GameStarted generate_GameStarted();
 
+	/* Zwrócenie ilości dotychczasowych tur. */
 	size_t get_turns_size() { return turns.size(); }
 
 	/* Generowanie wiadomości Turn dla wszystkich klientów. */
@@ -163,6 +168,7 @@ public:
 
 private:
 
+	/* Funkcja zwracająca losową pozycję. */
 	Position random_position();
 
 	/* Sprawdzenie, czy pozycja mieści się w zakresie planszy. */

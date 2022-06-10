@@ -9,6 +9,7 @@
 
 #define NO_BYTES 0
 
+/* Pomocnicza klasa abstrakcyjna do obsługi połączenia klient-serwer. */
 class ServerConnection {
 public:
 	virtual ~ServerConnection() = default;
@@ -19,7 +20,7 @@ public:
 
 	virtual std::optional<player_id_t> get_id() { return {}; }
 
-	virtual void set_id(player_id_t id) {}
+	virtual void set_id(player_id_t) {}
 
 	virtual void remove_id() {}
 };
@@ -41,7 +42,7 @@ public:
 			: socket_(std::move(socket)),
 			  game_room(game_room) {
 		/* Inicjujemy bufor na odpowiednią wielkość. */
-		buffer.initialize(BUFFER_SIZE);
+		buffer.initialize(MAX_PACKAGE_SIZE, MID_SIZE);
 
 		/* Zapisujemy adres ip klienta. */
 		name = boost::lexical_cast<std::string>(socket_.remote_endpoint());

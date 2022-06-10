@@ -11,26 +11,10 @@ class ServerParameters {
 public:
 	ServerParameters(int argc, char **argv) : argc(argc), argv(argv) {
 		check_parameters();
-		print_parameters();
 	}
 
 private:
 	void check_parameters();
-
-	void print_parameters() const {
-		std:: cout << "Server parameters:" << std::endl;
-		std:: cout << "         bomb_timer:       " << bomb_timer << std::endl;
-		std:: cout << "         players_count:    " << (uint16_t) players_count<<std::endl;
-		std:: cout << "         turn_duration:    " << turn_duration <<std::endl;
-		std:: cout << "         explosion_radius: " << explosion_radius << std::endl;
-		std:: cout << "         initial_blocks:   " << initial_blocks <<std::endl;
-		std:: cout << "         game_length:      " << game_length << std::endl;
-		std:: cout << "         server_name:      " << server_name << std::endl;
-		std:: cout << "         port:             " << port << std::endl;
-		std:: cout << "         size_x:           " << size_x << std::endl;
-		std:: cout << "         size_y:           " << size_y << std::endl;
-
-	}
 
 public:
 	uint16_t bomb_timer{0};

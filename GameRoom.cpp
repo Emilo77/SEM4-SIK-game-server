@@ -2,10 +2,11 @@
 #include "Connection.h"
 
 void GameRoom::connect_to_game_room(const gamer_ptr &gamer) {
+	/* Wstawiamy klienta do kontenera. */
 	gamers_.insert(gamer);
 	auto message = ServerMessage(Hello, game_info.generate_Hello());
 
-	/* Wysyłamy Hello do danego gracza. */
+	/* Wysyłamy Hello do danego klienta. */
 	gamer->deliver(message);
 
 	if (game_info.is_gameplay()) {
@@ -25,14 +26,17 @@ void GameRoom::connect_to_game_room(const gamer_ptr &gamer) {
 }
 
 void GameRoom::send_all_turns(const gamer_ptr &gamer) {
+	/* Pobieramy rozmiar kontenera na tury. */
 	size_t size = game_info.get_turns_size();
 	for (size_t i = 0; i < size; i++) {
+		/* Tworzymy wiadomość z turą i wysyłamy ją do klienta. */
 		auto turn = ServerMessage(Turn, game_info.generate_Turn(i));
 		gamer->deliver(turn);
 	}
 }
 
 void GameRoom::send_all_accepted_players(const gamer_ptr &gamer) {
+	/* Wysyłamy wszystkie dotychczasowe wiadomości AcceptedPlayer do klienta. */
 	for (auto &message: accepted_players_messages) {
 		gamer->deliver(message);
 	}
@@ -40,8 +44,10 @@ void GameRoom::send_all_accepted_players(const gamer_ptr &gamer) {
 
 
 void GameRoom::leave(const gamer_ptr &gamer) {
+	/* Usuwamy klienta z kontenera. */
 	gamers_.erase(gamer);
 	if (gamer->get_id().has_value()) {
+		/* Usuwamy ostatnią wiadomość klienta */
 		player_id_t id = gamer->get_id().value();
 		if (last_messages.find(id) != last_messages.end()) {
 			last_messages.erase(id);
@@ -94,36 +100,49 @@ void GameRoom::get_message(const gamer_ptr &gamer, ClientMessage &message) {
 }
 
 void GameRoom::send_to_all(ServerMessage &message) {
+	/* Rozsyłamy wiadomość do wszystkich klientów. */
 	for (auto &gamer: gamers_) {
 		gamer->deliver(message);
 	}
 }
 
 void GameRoom::remove_all_ids() {
+	/* Czyścimy id każdego klienta. */
 	for (auto &gamer: gamers_) {
 		gamer->remove_id();
 	}
 }
 
 void GameRoom::simulate_turns() {
+	/* Ustawiamy timer na turn duration. */
 	timer.expires_from_now(
 			boost::asio::chrono::milliseconds(parameters.turn_duration));
 
 	timer.async_wait([this](const boost::system::error_code &error) {
 
 		if (!error) {
+			/* Symulujemy turę.*/
 			game_info.simulate_turn(last_messages);
+			/* Usuwamy wszystkie ostatnie wiadomości. */
 			last_messages.clear();
+			/* Generujemy wiadomość tury i wysyłamy ją. */
 			auto turn = ServerMessage(Turn, game_info.generate_last_Turn());
 			send_to_all(turn);
 
+			/* Sprawdzamy, czy powinniśmy zakończyć grę. */
 			if (!game_info.should_end()) {
+				/* Jeśli nie, symulujemy kolejną turę. */
 				simulate_turns();
 			} else {
+				/* Jeśli tak, generujemy wiadomość GameEnded i wysyłamy ją
+				 * do wszystkich. */
 				auto game_ended = ServerMessage(GameEnded,
 				                                game_info.generate_GameEnded());
 				send_to_all(game_ended);
+				/* Resetujemy stan gry. */
 				game_info.reset_all();
+				/* Czyścimy id wszystkich klientów, oznacza to, że wszyscy
+				 * klienci tracą stan gracza. */
 				remove_all_ids();
 			}
 
@@ -134,16 +153,19 @@ void GameRoom::simulate_turns() {
 }
 
 void GameRoom::handle_game() {
+	/* Rozpoczynamy rozgrywkę. */
 	game_info.start_gameplay();
 
+	/* Generujemy wiadomość GameStarted i wysyłamy ją do wszystkich.*/
 	auto game_started = ServerMessage(GameStarted,
 	                                  game_info.generate_GameStarted());
-
 	send_to_all(game_started);
 
+	/* Generujemy turę zero i wysyłamy ją do wszystkich. */
 	auto turn_zero = ServerMessage(Turn, game_info.generate_last_Turn());
 	send_to_all(turn_zero);
 
+	/* Symulujemy resztę rozgrywki. */
 	simulate_turns();
 }
 

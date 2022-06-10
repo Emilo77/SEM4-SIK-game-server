@@ -17,12 +17,11 @@ void Connection::deliver(ServerMessage &message) {
 	/* Wkładamy wiadomość do bufora. */
 	socket_.async_send(
 			boost::asio::buffer(buffer.get_send(), send),
-			[this](
-					const boost::system::error_code &error,
-					size_t bytesTransferred) {
+			[this](const boost::system::error_code &error,
+			       size_t bytesTransferred) {
 
 				/* W przypadku błędu rozłączamy klienta. */
-				if (error) {
+				if (error || (bytesTransferred == 0)) {
 					std::cerr << "Failed to send message!\n";
 					game_room.leave(shared_from_this());
 				}
@@ -66,7 +65,8 @@ void Connection::do_receive() {
 void Connection::handle_receive(size_t bytesTransferred) {
 	try {
 		/* Wyciągamy wiadomość z bufora. */
-		auto message = buffer.receive_ClientMessage(bytesTransferred, player_id);
+		auto message = buffer.receive_ClientMessage(bytesTransferred,
+		                                            player_id);
 
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);

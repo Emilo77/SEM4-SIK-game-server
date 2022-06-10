@@ -4,9 +4,10 @@
 
 /* Początkowa wielkość bufora, aby móc odebrać największy możliwy pakiet TCP */
 #define MAX_PACKAGE_SIZE 65535
-/* Początkowa wielkość bufora do obsługi GUI -> SERWER, są tam wysyłane komunikaty
- * o małej wielkości, zatem ustawiamy mniejszy rozmiar bufora. */
-#define BUFFER_SIZE 1024
+/* Początkowa wielkość bufora do odbierania wiadomości od klientów, są tam
+ * wysyłane komunikaty o małej wielkości, zatem ustawiamy mniejszy rozmiar
+ * bufora. */
+#define MID_SIZE 1024
 
 #include "ServerParameters.h"
 #include "Utils.h"
@@ -120,7 +121,7 @@ private:
 
 public:
 	/* Wstępne ustawienie wielkości kontenerów. */
-	void initialize(size_t size);
+	void initialize(size_t send_size, size_t receive_size);
 
 	/* Dopasowanie wielkości kontenerów. */
 	void adapt_size();

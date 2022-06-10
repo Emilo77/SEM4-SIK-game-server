@@ -132,40 +132,22 @@ void Buffer::insert_map_scores(std::map<player_id_t, score_t> &scores) {
 }
 
 void Buffer::insert_bomb_placed(struct BombPlaced &bomb_placed) {
-	std:: cerr << "Event: BombPlaced\n";
-	std:: cerr << "Bomb id: " << bomb_placed.bomb_id << std::endl;
-	std:: cerr << "Position: " << bomb_placed.position.x <<
-	" " << bomb_placed.position.y << std::endl;
-
 	insert(bomb_placed.bomb_id);
 	insert(bomb_placed.position);
 }
 
 void Buffer::insert_bomb_exploded(struct BombExploded &bomb_exploded) {
-	std:: cerr << "Event: BombExploded\n";
-	std:: cerr << "Bomb id: " << bomb_exploded.bomb_id << std::endl;
-	std:: cerr << "...\n";
-
 	insert(bomb_exploded.bomb_id);
 	insert_list_player_ids(bomb_exploded.robots_destroyed);
 	insert_list_positions(bomb_exploded.blocks_destroyed);
 }
 
 void Buffer::insert_player_moved(struct PlayerMoved &player_moved) {
-	std:: cerr << "Event: PlayerMoved\n";
-	std:: cerr << "Player id: " << player_moved.player_id << std::endl;
-	std:: cerr << "Position: " << player_moved.position.x <<
-	           " " << player_moved.position.y << std::endl;
-
 	insert(player_moved.player_id);
 	insert(player_moved.position);
 }
 
 void Buffer::insert_block_placed(struct BlockPlaced &block_placed) {
-	std:: cerr << "Event: BlockPlaced\n";
-	std:: cerr << "Position: " << block_placed.position.x <<
-	           " " << block_placed.position.y << std::endl;
-
 	insert(block_placed.position);
 }
 
@@ -224,8 +206,11 @@ void Buffer::insert_game_ended(struct GameEnded &game_ended) {
 }
 
 size_t Buffer::insert_ServerMessage(ServerMessage &message) {
+	/* Resetujemy index do wysyłania. */
 	reset_send_index();
+	/* Wstawiamy typ wiadomości do bufora. */
 	insert((uint8_t) message.type);
+	/* W zależności od typu wstawiamy resztę wiadomości. */
 	switch (message.type) {
 		case Hello:
 			insert_hello(std::get<struct Hello>(message.data));
@@ -244,6 +229,7 @@ size_t Buffer::insert_ServerMessage(ServerMessage &message) {
 			insert_game_ended(std::get<struct GameEnded>(message.data));
 			break;
 	}
+	/* Zwracamy ilość oktetów do wysłania.*/
 	return get_send_size();
 }
 
@@ -314,13 +300,15 @@ ClientMessage Buffer::receive_ClientMessage(size_t received_size,
 	return clientMessage.value();
 }
 
-void Buffer::initialize(size_t size) {
-	receive_buffer.resize(size, 0);
-	send_buffer.resize(size, 0);
+void Buffer::initialize(size_t send_size, size_t receive_size) {
+	/* Inicjujemy bufory na odpowiednią wielkość. */
+	send_buffer.resize(send_size, 0);
+	receive_buffer.resize(receive_size, 0);
 }
 
 void Buffer::adapt_size() {
-	if (shift_index + MAX_PACKAGE_SIZE > receive_buffer.size()) {
-		receive_buffer.resize(receive_buffer.size() + MAX_PACKAGE_SIZE, 0);
+	/* Rozszerzamy bufor do wystarczających rozmiarów. */
+	if (shift_index + MID_SIZE > receive_buffer.size()) {
+		receive_buffer.resize(receive_buffer.size() + MID_SIZE, 0);
 	}
 }

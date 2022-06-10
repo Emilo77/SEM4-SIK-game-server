@@ -12,7 +12,6 @@ void Board::reset(uint16_t size_x, uint16_t size_y) {
 		for (auto &field: column) {
 			field.make_air();
 			field.reset_exploded();
-			field.reset_bomb_placed();
 			field.reset_will_be_solid();
 		}
 	}
@@ -28,7 +27,6 @@ void Board::apply_explosions() {
 			if (row.is_exploded()) {
 				row.make_air();
 				row.reset_exploded();
-				row.reset_bomb_placed();
 			}
 		}
 	}
@@ -259,7 +257,7 @@ void Game::simulate_turn(std::map<player_id_t, ClientMessage> &messages) {
 		if (!player.second.is_dead()) {
 
 			/* Obsługujemy gracza i dodajemy odpowiednie zdarzenie do listy. */
-			if(messages.find(player.first) != messages.end()) {
+			if (messages.find(player.first) != messages.end()) {
 				auto event = apply_client_message(messages.at(player.first));
 				if (event.has_value()) {
 					/* Dodajemy event do listy. */
@@ -307,7 +305,7 @@ struct GameStarted Game::generate_GameStarted() {
 
 struct Turn Game::generate_Turn(size_t number) {
 	if (number >= turns.size()) {
-		std::cerr << "Nie znaleziono tury!\n";
+		std::cerr << "Turn not found!\n";
 		exit(420);
 	}
 
@@ -335,26 +333,17 @@ std::optional<Event> Game::apply_BombPlaced(player_id_t player_id) {
 	/* Wyciągamy pozycję gracza. */
 	Position player_pos = player_positions.at(player_id);
 
-	/* Sprawdzamy, czy w tej turze, na tym polu, nie została postawiona już
-	 * bomba.*/
-	if (!board.at(player_pos).is_bomb_placed()) {
+	/* Generujemy nowe id */
+	bomb_id_t new_bomb_id = id_generator.new_bomb_id();
 
-		/* Oznaczamy, że na polu postawiono bombę. */
-		board.at(player_pos).place_bomb();
+	/* Dodajemy bombę do mapy bomb. */
+	bombs.insert({new_bomb_id, Bomb(player_pos, bomb_timer)});
 
-		/* Generujemy nowe id */
-		bomb_id_t new_bomb_id = id_generator.new_bomb_id();
+	/* Dodajemy zdarzenie BombPlaced do listy zdarzeń w tej turze. */
+	struct BombPlaced data(new_bomb_id, player_pos);
+	new_event.emplace(EventType::BombPlaced, data);
 
-		/* Dodajemy bombę do mapy bomb. */
-		bombs.insert({new_bomb_id, Bomb(player_pos, bomb_timer)});
-
-		/* Dodajemy zdarzenie BombPlaced do listy zdarzeń w tej turze. */
-		struct BombPlaced data(new_bomb_id, player_pos);
-		new_event.emplace(EventType::BombPlaced, data);
-
-		return new_event;
-	}
-	return {};
+	return new_event;
 }
 
 std::optional<Event>

@@ -14,8 +14,6 @@ void Connection::deliver(ServerMessage &message) {
 	/* Wkładamy wiadomość do bufora. */
 	size_t send = buffer.insert_ServerMessage(message);
 
-	buffer.print(60);
-
 	/* Wkładamy wiadomość do bufora. */
 	socket_.async_send(
 			boost::asio::buffer(buffer.get_send(), send),

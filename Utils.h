@@ -90,11 +90,9 @@ public:
 			: position(position),
 			  timer(timer) {}
 
-	void decrease_timer() {
-		timer--;
-	}
+	void decrease_timer() { timer--; }
 
-	bool ready_to_explode() { return timer == 0; }
+	[[nodiscard]] bool ready_to_explode() const { return timer == 0; }
 };
 
 /* Klasa określająca gracza. */

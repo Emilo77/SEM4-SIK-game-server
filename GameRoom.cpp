@@ -59,12 +59,6 @@ void GameRoom::accept_to_game(const gamer_ptr &gamer, ClientMessage &message) {
 	/* Ustawiamy naszemu klientowi otrzymane id. */
 	gamer->set_id(new_id);
 
-	if (!gamer->get_id().has_value()) {
-		std::cerr << "Gamer nadal nie posiada id\n";
-	} else {
-		std::cerr << "Gamer otzymał id\n";
-	}
-
 	/* Tworzymy wiadomość AcceptedPlayer */
 	struct AcceptedPlayer data(new_id, new_player);
 	auto accepted_player = ServerMessage(AcceptedPlayer, data);
@@ -84,12 +78,6 @@ void GameRoom::accept_to_game(const gamer_ptr &gamer, ClientMessage &message) {
 
 
 void GameRoom::get_message(const gamer_ptr &gamer, ClientMessage &message) {
-	if (gamer->get_id().has_value()) {
-		std::cerr << "Gamer ma id" << std::endl;
-	} else {
-		std::cerr << "Gamer nie posiada id" << std::endl;
-	}
-
 	if (game_info.is_gameplay()) {
 		/* Jeśli trwa rozgrywka i klient jest graczem,
 		 * dodajemy jego wiadomość. */
@@ -98,7 +86,6 @@ void GameRoom::get_message(const gamer_ptr &gamer, ClientMessage &message) {
 		}
 	} else {
 		if (message.type == Join && !gamer->get_id().has_value()) {
-			std::cerr << "Weszło do akceptowania klienta" << std::endl;
 			/* Jeżeli klient wysyła Join i nie jest zaakceptowany,
 			 * dodajemy go do zbioru graczy. */
 			accept_to_game(gamer, message);
@@ -119,8 +106,6 @@ void GameRoom::remove_all_ids() {
 }
 
 void GameRoom::simulate_turns() {
-	std::cerr << "Weszło do symulowania tury\n";
-
 	timer.expires_from_now(
 			boost::asio::chrono::milliseconds(parameters.turn_duration));
 
@@ -133,7 +118,6 @@ void GameRoom::simulate_turns() {
 			send_to_all(turn);
 
 			if (!game_info.should_end()) {
-				std::cerr << "Weszło do kończenia gry" << std::endl;
 				simulate_turns();
 			} else {
 				auto game_ended = ServerMessage(GameEnded,

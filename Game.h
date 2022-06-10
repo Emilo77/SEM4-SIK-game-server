@@ -36,7 +36,6 @@ private:
 	bool solid{false};
 	bool will_be_solid{false};
 	bool exploded{false};
-	bool bomb_placed{false};
 
 public:
 	/* Zaznaczenie, że pole jest blokiem. */
@@ -44,9 +43,6 @@ public:
 
 	/* Zaznaczenie, że pole jest powietrzem (nie jest blokiem). */
 	void make_air() { solid = false; }
-
-	/* Zaznaczenie, że na polu postawiono bombę w tej turze. */
-	void place_bomb() { bomb_placed = true; }
 
 	/* Zaznaczenie, że pole eksplodowało w tej turze. */
 	void mark_exploded() { exploded = true; }
@@ -57,9 +53,6 @@ public:
 	/* Zresetowanie eksplozji. */
 	void reset_exploded() { exploded = false; }
 
-	/* Zresetowanie postawienia bomby. */
-	void reset_bomb_placed() { bomb_placed = false; }
-
 	/* Zresetowanie zaznaczenia, że pole będzie blokiem. */
 	void reset_will_be_solid() { will_be_solid = false; }
 
@@ -68,9 +61,6 @@ public:
 
 	/* Sprawdzenie, czy pole eksplodowało w aktualnej turze. */
 	[[nodiscard]] bool is_exploded() const { return exploded; }
-
-	/* Sprawdzenie, czy na polu została postawiona bomba w tej turze. */
-	[[nodiscard]] bool is_bomb_placed() const { return bomb_placed; }
 
 	/* Sprawdzenie, czy pole będzie blokiem w następnej turze. */
 	[[nodiscard]] bool will_be_placed() const { return will_be_solid; }

@@ -170,7 +170,6 @@ void Buffer::insert_block_placed(struct BlockPlaced &block_placed) {
 }
 
 void Buffer::insert_event(Event &event) {
-	std::cerr << std::endl;
 	insert((uint8_t) event.type);
 	switch (event.type) {
 		case BombPlaced:
@@ -215,10 +214,6 @@ void Buffer::insert_game_started(struct GameStarted &game_started) {
 }
 
 void Buffer::insert_turn(struct Turn &turn) {
-	std::cerr << std::endl;
-	std::cerr<<"Tura nr " << turn.turn_number << std::endl;
-	std::cerr<<"Ilość eventów: " << turn.events.size() << std::endl;
-
 	insert(turn.turn_number);
 	insert_list_events(turn.events);
 	std::cerr << std::endl;

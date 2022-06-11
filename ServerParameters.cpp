@@ -1,4 +1,4 @@
-#include "ServerParameters.h"
+#include "ServerParametersParser.h"
 
 namespace po = boost::program_options;
 
@@ -19,7 +19,7 @@ void exit_program(int status) {
 
 /* Sprawdzenie, czy liczba mieści się w dozwolonym przedziale */
 static inline void check_8(int64_t number, const char *parameter) {
-	if (number < 0 || number > UINT8_MAX) {
+	if ((number < 0) || (number > UINT8_MAX)) {
 		throw po::validation_error(po::validation_error::invalid_option_value,
 		                           parameter);
 	}
@@ -27,15 +27,7 @@ static inline void check_8(int64_t number, const char *parameter) {
 
 /* Sprawdzenie, czy liczba mieści się w dozwolonym przedziale */
 static inline void check_16(int64_t number, const char *parameter) {
-	if (number < 0 || number > UINT16_MAX) {
-		throw po::validation_error(po::validation_error::invalid_option_value,
-		                           parameter);
-	}
-}
-
-/* Sprawdzenie, czy liczba mieści się w dozwolonym przedziale */
-static inline void check_32(int64_t number, const char *parameter) {
-	if (number < 0 || number > UINT32_MAX) {
+	if ((number < 0) || (number > UINT16_MAX)) {
 		throw po::validation_error(po::validation_error::invalid_option_value,
 		                           parameter);
 	}
@@ -43,13 +35,13 @@ static inline void check_32(int64_t number, const char *parameter) {
 
 /* Sprawdzenie, czy liczba mieści się w dozwolonym przedziale */
 static inline void check_64(int64_t number, const char *parameter) {
-	if (number < 0 || number > INT64_MAX) {
+	if ((number < 0) || (number > INT64_MAX)) {
 		throw po::validation_error(po::validation_error::invalid_option_value,
 		                           parameter);
 	}
 }
 
-void ServerParameters::check_parameters() {
+void ServerParametersParser::check_parameters() {
 	const po::positional_options_description p;
 	po::options_description desc(1024, 512);
 
@@ -61,7 +53,6 @@ void ServerParameters::check_parameters() {
 		int64_t initial_blocks_;
 		int64_t game_length_;
 		int64_t port_;
-		int64_t seed_;
 		int64_t size_x_;
 		int64_t size_y_;
 		std::string es;
@@ -70,7 +61,7 @@ void ServerParameters::check_parameters() {
 				("help,h", "produce help message")
 
 				("bomb-timer,b", po::value<int64_t>(&bomb_timer_)->value_name
-						 ("<u16>")->required(),"set bomb timer")
+						("<u16>")->required(), "set bomb timer")
 
 				("players-count,c", po::value<int64_t>(
 						&players_count_)->value_name
@@ -97,8 +88,11 @@ void ServerParameters::check_parameters() {
 				("port,p", po::value<int64_t>(&port_)
 						->value_name("<u16>")->required(), "set port")
 
-				("seed,s", po::value<int64_t>(&seed_)
-						->value_name("<u32, optional parameter>"), "set seed")
+				("seed,s", po::value<uint32_t>(&seed)
+						 ->value_name("<u32, optional parameter>")
+						 ->default_value(static_cast<uint32_t>
+						                 (std::chrono::system_clock::now().time_since_epoch().count())),
+				 "set seed")
 
 				("size-x,x", po::value<int64_t>(&size_x_)
 						->value_name("<u16>")->required(), "set size x of "
@@ -109,10 +103,10 @@ void ServerParameters::check_parameters() {
 				                                           "board");
 
 		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).
-				options(desc).
-				positional(p).
-				run(), vm);
+		po::store(po::command_line_parser(argc, argv)
+				          .options(desc)
+				          .positional(p)
+				          .run(), vm);
 
 		/* Jeżeli wystąpi opcja help, ignorujemy inne parametry
 		 * i kończymy działanie programu */
@@ -121,13 +115,12 @@ void ServerParameters::check_parameters() {
 			exit_program(EXIT_SUCCESS);
 		}
 
-		if(vm.count("seed")) {
-			check_32(seed_, "seed");
-			seed.emplace((uint32_t) seed_);
-		}
-
+		/* Jeżeli obowiązkowy parametr nie został podany,
+		 * zostanie rzucony wyjątek.*/
 		po::notify(vm);
 
+		/* Sprawdzenie poprawności zakresów parametrów,
+		 * w przypadku błędu zostanie rzucony wyjątek. */
 		check_16(bomb_timer_, "bomb-timer");
 		check_8(players_count_, "players-count");
 		check_64(turn_duration_, "turn-duration");
@@ -138,6 +131,7 @@ void ServerParameters::check_parameters() {
 		check_16(size_x_, "size-x");
 		check_16(size_y_, "size-y");
 
+		/* Ustawienie odpowiednich typów. */
 		bomb_timer = (uint16_t) bomb_timer_;
 		players_count = (uint8_t) players_count_;
 		turn_duration = (uint64_t) turn_duration_;
@@ -149,6 +143,8 @@ void ServerParameters::check_parameters() {
 		size_y = (uint16_t) size_y_;
 
 	}
+	/* W przypadku złapania wyjątku program wypisuje błąd
+	 * oraz kończy działanie. */
 	catch (std::exception &e) {
 		std::cerr << "Error: " << e.what() << "\n";
 		exit_program(EXIT_FAILURE);

@@ -6,10 +6,11 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <chrono>
 
-class ServerParameters {
+class ServerParametersParser {
 public:
-	ServerParameters(int argc, char **argv) : argc(argc), argv(argv) {
+	ServerParametersParser(int argc, char **argv) : argc(argc), argv(argv) {
 		check_parameters();
 	}
 
@@ -25,7 +26,7 @@ public:
 	uint16_t game_length{0};
 	std::string server_name;
 	uint16_t port{0};
-	std::optional<uint32_t> seed{0};
+	uint32_t seed{0};
 	uint16_t size_x{0};
 	uint16_t size_y{0};
 

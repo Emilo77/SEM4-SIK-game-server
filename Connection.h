@@ -33,6 +33,7 @@ class Connection :
 
 public:
 	~Connection() override {
+		/* Zamknięcie gniazda. */
 		if (socket_.is_open()) {
 			socket_.close();
 		}
@@ -51,21 +52,29 @@ public:
 		socket_.set_option(tcp::no_delay(true));
 	}
 
+	/* Rozpoczynanie połączenia. */
 	void do_start();
 
+	/* Wysyłanie wiadomości do klienta. */
 	void deliver(ServerMessage &message) override;
 
+	/* Pobranie nazwy klienta. */
 	std::string get_name() override { return name; }
 
+	/* Pobranie możliwego id od klienta. */
 	std::optional<player_id_t> get_id() override { return player_id; }
 
+	/* Ustawianie id klienta. */
 	void set_id(player_id_t id) override { player_id.emplace(id); }
 
+	/* Usunięcie id klienta. */
 	void remove_id() override { player_id.reset(); }
 
 private:
+	/* Rozpoczęcie odbierania wiadomości. */
 	void do_receive();
 
+	/* Obsługa odebranej wiadomości. */
 	void handle_receive(size_t bytesTransferred);
 
 	Buffer buffer;

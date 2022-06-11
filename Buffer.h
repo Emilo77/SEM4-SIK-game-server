@@ -9,7 +9,7 @@
  * bufora. */
 #define MID_SIZE 1024
 
-#include "ServerParameters.h"
+#include "ServerParametersParser.h"
 #include "Utils.h"
 #include "Messages.h"
 #include <cstring>

@@ -198,7 +198,6 @@ void Buffer::insert_game_started(struct GameStarted &game_started) {
 void Buffer::insert_turn(struct Turn &turn) {
 	insert(turn.turn_number);
 	insert_list_events(turn.events);
-	std::cerr << std::endl;
 }
 
 void Buffer::insert_game_ended(struct GameEnded &game_ended) {

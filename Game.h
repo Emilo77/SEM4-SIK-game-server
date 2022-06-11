@@ -2,7 +2,7 @@
 #define ZADANIE02_GAME_H
 
 #include "Utils.h"
-#include "ServerParameters.h"
+#include "ServerParametersParser.h"
 #include "Messages.h"
 #include <map>
 #include <set>
@@ -16,7 +16,6 @@ private:
 	player_id_t player_id{0};
 
 public:
-
 	void reset() {
 		turn_id = 0;
 		bomb_id = 0;
@@ -90,19 +89,21 @@ public:
 
 class Game {
 public:
-	explicit Game(ServerParameters &server_parameters, RandomGenerator &random)
-			: random(random),
-			  server_name(server_parameters.server_name),
+	explicit Game(ServerParametersParser &server_parameters)
+			: server_name(server_parameters.server_name),
 			  players_count(server_parameters.players_count),
 			  size_x(server_parameters.size_x),
 			  size_y(server_parameters.size_y),
 			  game_length(server_parameters.game_length),
 			  explosion_radius(server_parameters.explosion_radius),
 			  bomb_timer(server_parameters.bomb_timer),
-			  initial_blocks(server_parameters.initial_blocks) {}
+			  initial_blocks(server_parameters.initial_blocks) {
+
+		random.seed(server_parameters.seed);
+	}
 
 private:
-	RandomGenerator random;
+	std::minstd_rand random;
 	enum GameState game_state{LobbyState};
 
 	std::string server_name{};
@@ -125,10 +126,10 @@ private:
 
 public:
 	/* Sprawdzenie, w jakim stanie jest gra. */
-	bool is_gameplay();
+	bool is_gameplay() { return game_state == GameplayState; }
 
 	/* Sprawdzenie, czy powinniśmy zakończyć grę. */
-	bool should_end() {  return turns.size() > game_length; }
+	bool should_end() { return turns.size() > game_length; }
 
 	bool enough_players() { return players.size() >= players_count; }
 

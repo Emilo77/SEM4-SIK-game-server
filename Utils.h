@@ -22,18 +22,10 @@ using score_t = uint32_t;
 using coordinate_t = uint16_t;
 
 class RandomGenerator {
-	uint32_t seed;
 	std::minstd_rand random;
 public:
-	explicit RandomGenerator(std::optional<uint32_t> seed_option) {
-		if (seed_option.has_value()) {
-			seed = seed_option.value();
-		} else {
-			seed = (uint32_t) std::chrono::system_clock::now()
-					.time_since_epoch().count();
-		}
-
-		random.seed(seed);
+	explicit RandomGenerator(uint32_t seed_option) {
+		random.seed(seed_option);
 	}
 
 	uint64_t generate() {

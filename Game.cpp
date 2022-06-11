@@ -63,8 +63,9 @@ static inline std::pair<int, int> direction_to_pair(Direction direction) {
 }
 
 Position Game::random_position() {
-	auto new_x = static_cast<uint16_t>(random.generate() % size_x);
-	auto new_y = static_cast<uint16_t>(random.generate() % size_y);
+	/* Losujemy współrzędną x i y. */
+	uint16_t new_x = (uint16_t) (random() % size_x);
+	uint16_t new_y = (uint16_t) (random() % size_y);
 
 	return {new_x, new_y};
 }
@@ -83,6 +84,7 @@ void Game::clear_containers() {
 }
 
 void Game::initialize_containers() {
+	/* Inicjujemy dla każdego gracza elementy w kontenerach. */
 	for (auto &new_player_pair: players) {
 		scores.insert({new_player_pair.first, 0});
 		player_positions.insert({new_player_pair.first, Position()});
@@ -93,6 +95,8 @@ void Game::kill_players_at(Position position, std::vector<player_id_t>
 &destroyed) {
 	for (auto &element: player_positions) {
 		if (element.second == position) {
+			/* Jeżeli gracz znajdywał się na pozycji, która eksplodowała,
+			 * oznaczamy go, że eksplodował w tej turze. */
 			destroyed.push_back(element.first);
 			players.at(element.first).explode();
 		}
@@ -102,6 +106,8 @@ void Game::kill_players_at(Position position, std::vector<player_id_t>
 void Game::change_scores_and_revive_players() {
 	for (auto &player_pair: players) {
 		if (player_pair.second.is_dead()) {
+			/* Zwiększamy wynik każdemu graczowi, który eksplodował
+			 * oraz przywracamy go do życia. */
 			scores.at(player_pair.first)++;
 			player_pair.second.revive();
 		}
@@ -142,6 +148,7 @@ Game::mark_explosions_in_direction(Position bomb_pos, Direction direction,
 	auto pair = direction_to_pair(direction);
 
 	for (int i = 1; i <= explosion_radius; i++) {
+		/* Wyznaczamy współrzędne miejsca eksplozji. */
 		int new_x = bomb_pos.x + i * pair.first;
 		int new_y = bomb_pos.y + i * pair.second;
 
@@ -165,13 +172,13 @@ Game::mark_explosions_in_direction(Position bomb_pos, Direction direction,
 	}
 }
 
-bool Game::is_gameplay() {
-	return game_state == GameplayState;
-}
-
 player_id_t Game::accept_player(Player &player) {
+	/* Generujemy graczowi nowe player_id i umieszczamy go
+	 * do kontenera graczy. */
 	player_id_t new_id = id_generator.new_player_id();
 	players.insert({new_id, player});
+
+	/* Jako wynik funkcji zwracamy jego player_id. */
 	return new_id;
 }
 
@@ -204,11 +211,14 @@ void Game::start_gameplay() {
 
 		/* Losujemy pozycję do postawienia bloku. */
 		Position new_position = random_position();
-		board.at(new_position).make_solid();
 
-		/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
-		struct BlockPlaced data(new_position);
-		new_events.emplace_back(BlockPlaced, data);
+		if (!board.at(new_position).is_solid()) {
+			board.at(new_position).make_solid();
+
+			/* Dodajemy zdarzenie BlockPlaced do kontenera zdarzeń. */
+			struct BlockPlaced data(new_position);
+			new_events.emplace_back(BlockPlaced, data);
+		}
 	}
 
 	/* Dodajemy turę do kontenera tur. */
@@ -304,11 +314,6 @@ struct GameStarted Game::generate_GameStarted() {
 }
 
 struct Turn Game::generate_Turn(size_t number) {
-	if (number >= turns.size()) {
-		std::cerr << "Turn not found!\n";
-		exit(420);
-	}
-
 	return turns[number];
 }
 
@@ -411,28 +416,26 @@ std::optional<Event> Game::apply_BlockPlaced(player_id_t player_id) {
 		struct BlockPlaced data(block_position);
 		new_event.emplace(EventType::BlockPlaced, data);
 
+		/* Zwracamy zdarzenie. */
 		return new_event;
 	}
 	return {};
 }
 
 std::optional<Event> Game::apply_client_message(ClientMessage &message) {
-	if (game_state == LobbyState) {
-		if (message.type == Join) {
-			return {};
-		}
-	} else {
-		switch (message.type) {
-			case Join:
-				break;
-			case PlaceBomb:
-				return apply_BombPlaced(message.player_id.value());
-			case PlaceBlock:
-				return apply_BlockPlaced(message.player_id.value());
-			case Move:
-				return apply_PlayerMoved(message.player_id.value(),
-				                         std::get<Direction>(message.data));
-		}
+	/* W zależności od typu wykonujemy dane polecenie.
+	 * Jako wynik funkcji zwracamy zdarzenie, jeśli było poprawne i zmieniło
+	 * stan gry. */
+	switch (message.type) {
+		case Join:
+			break;
+		case PlaceBomb:
+			return apply_BombPlaced(message.player_id.value());
+		case PlaceBlock:
+			return apply_BlockPlaced(message.player_id.value());
+		case Move:
+			return apply_PlayerMoved(message.player_id.value(),
+			                         std::get<Direction>(message.data));
 	}
 	return {};
 }

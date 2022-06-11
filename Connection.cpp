@@ -71,6 +71,7 @@ void Connection::handle_receive(size_t bytesTransferred) {
 		/* Przekazujemy ją do pokoju gry. */
 		game_room.get_message(shared_from_this(), message);
 
+		/* Zapętlamy się, aż wyciągniemy wszystkie wiadomości. */
 		handle_receive(NO_BYTES);
 
 	} catch (IncompleteMessage &e) {

@@ -3,8 +3,8 @@ project(Zadanie02_server)
 
 set(CMAKE_CXX_STANDARD 20)
 
-#set(CMAKE_CXX_FLAGS " -pthread -Wall -Wextra -Wconversion -Werror -O2 -std=gnu++20")
 set(CMAKE_CXX_FLAGS " -pthread -Wall -Wextra -Wconversion -Werror -O2 -std=gnu++17")
+
 
 SET(Boost_USE_STATIC_LIBS FALSE)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS system program_options)

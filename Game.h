@@ -89,17 +89,17 @@ public:
 
 class Game {
 public:
-	explicit Game(ServerParametersParser &server_parameters)
-			: server_name(server_parameters.server_name),
-			  players_count(server_parameters.players_count),
-			  size_x(server_parameters.size_x),
-			  size_y(server_parameters.size_y),
-			  game_length(server_parameters.game_length),
-			  explosion_radius(server_parameters.explosion_radius),
-			  bomb_timer(server_parameters.bomb_timer),
-			  initial_blocks(server_parameters.initial_blocks) {
+	explicit Game(ServerParameters &server_parameters)
+			: server_name(server_parameters.getServerName()),
+			  players_count(server_parameters.getPlayersCount()),
+			  size_x(server_parameters.getSizeX()),
+			  size_y(server_parameters.getSizeY()),
+			  game_length(server_parameters.getGameLength()),
+			  explosion_radius(server_parameters.getExplosionRadius()),
+			  bomb_timer(server_parameters.getBombTimer()),
+			  initial_blocks(server_parameters.getInitialBlocks()) {
 
-		random.seed(server_parameters.seed);
+		random.seed(server_parameters.getSeed());
 	}
 
 private:

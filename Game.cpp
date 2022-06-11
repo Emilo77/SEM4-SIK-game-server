@@ -64,8 +64,8 @@ static inline std::pair<int, int> direction_to_pair(Direction direction) {
 
 Position Game::random_position() {
 	/* Losujemy współrzędną x i y. */
-	uint16_t new_x = (uint16_t) (random() % size_x);
-	uint16_t new_y = (uint16_t) (random() % size_y);
+	auto new_x = (uint16_t) (random() % size_x);
+	auto new_y = (uint16_t) (random() % size_y);
 
 	return {new_x, new_y};
 }

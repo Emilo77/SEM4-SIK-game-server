@@ -41,22 +41,23 @@ static inline void check_64(int64_t number, const char *parameter) {
 	}
 }
 
-void ServerParametersParser::check_parameters() {
+ServerParameters ServerParametersParser::check_parameters() {
 	const po::positional_options_description p;
 	po::options_description desc(1024, 512);
 
-	try {
-		int64_t bomb_timer_;
-		int64_t players_count_;
-		int64_t turn_duration_;
-		int64_t explosion_radius_;
-		int64_t initial_blocks_;
-		int64_t game_length_;
-		int64_t port_;
-		int64_t size_x_;
-		int64_t size_y_;
-		std::string es;
+	int64_t bomb_timer_;
+	int64_t players_count_;
+	int64_t turn_duration_;
+	int64_t explosion_radius_;
+	int64_t initial_blocks_;
+	int64_t game_length_;
+	int64_t port_;
+	int64_t size_x_;
+	int64_t size_y_;
+	std::string server_name_;
+	uint32_t seed_;
 
+	try {
 		desc.add_options()
 				("help,h", "produce help message")
 
@@ -82,13 +83,13 @@ void ServerParametersParser::check_parameters() {
 				("game-length,l", po::value<int64_t>(&game_length_)
 						->value_name("<u16>")->required(), "set game length")
 
-				("server-name,n", po::value<std::string>(&server_name)
+				("server-name,n", po::value<std::string>(&server_name_)
 						->value_name("<String>")->required(), "set server name")
 
 				("port,p", po::value<int64_t>(&port_)
 						->value_name("<u16>")->required(), "set port")
 
-				("seed,s", po::value<uint32_t>(&seed)
+				("seed,s", po::value<uint32_t>(&seed_)
 						 ->value_name("<u32, optional parameter>")
 						 ->default_value(static_cast<uint32_t>
 						                 (std::chrono::system_clock::now().time_since_epoch().count())),
@@ -130,18 +131,6 @@ void ServerParametersParser::check_parameters() {
 		check_16(port_, "port");
 		check_16(size_x_, "size-x");
 		check_16(size_y_, "size-y");
-
-		/* Ustawienie odpowiednich typów. */
-		bomb_timer = (uint16_t) bomb_timer_;
-		players_count = (uint8_t) players_count_;
-		turn_duration = (uint64_t) turn_duration_;
-		explosion_radius = (uint16_t) explosion_radius_;
-		initial_blocks = (uint16_t) initial_blocks_;
-		game_length = (uint16_t) game_length_;
-		port = (uint16_t) port_;
-		size_x = (uint16_t) size_x_;
-		size_y = (uint16_t) size_y_;
-
 	}
 	/* W przypadku złapania wyjątku program wypisuje błąd
 	 * oraz kończy działanie. */
@@ -154,5 +143,10 @@ void ServerParametersParser::check_parameters() {
 		exit_program(EXIT_FAILURE);
 	}
 
-
+	/* Zwracamy parametry. */
+	return {(uint16_t) bomb_timer_, (uint8_t) players_count_,
+	        (uint64_t) turn_duration_, (uint16_t) explosion_radius_,
+	        (uint16_t) initial_blocks_, (uint16_t) game_length_,
+	        server_name_, (uint16_t) port_, (uint32_t) seed_,
+	        (uint16_t) size_x_, (uint16_t) size_y_};
 }

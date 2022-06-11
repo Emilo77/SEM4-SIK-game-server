@@ -116,7 +116,7 @@ void GameRoom::remove_all_ids() {
 void GameRoom::simulate_turns() {
 	/* Ustawiamy timer na turn duration. */
 	timer.expires_from_now(
-			boost::asio::chrono::milliseconds(parameters.turn_duration));
+			boost::asio::chrono::milliseconds(parameters.getTurnDuration()));
 
 	timer.async_wait([this](const boost::system::error_code &error) {
 

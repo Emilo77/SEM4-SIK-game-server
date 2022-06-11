@@ -15,7 +15,7 @@ typedef std::shared_ptr<ServerConnection> gamer_ptr;
 
 class GameRoom {
 public:
-	GameRoom(ServerParametersParser &parameters, Game &game_info,
+	GameRoom(ServerParameters &parameters, Game &game_info,
 	         boost::asio::steady_timer timer)
 			: parameters(parameters),
 			  game_info(game_info),
@@ -52,7 +52,7 @@ private:
 	/* Zarządza turami i końcem rozgrywki. */
 	void simulate_turns();
 
-	ServerParametersParser parameters;
+	ServerParameters parameters;
 	Game game_info;
 
 	std::set<gamer_ptr> gamers_;

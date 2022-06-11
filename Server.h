@@ -11,12 +11,13 @@
 class Server {
 
 public:
-	explicit Server(Game &game, ServerParametersParser &parameters)
-			: _acceptor(_io_context, tcp::endpoint(tcp::v6(), parameters.port)),
+	explicit Server(Game &game, ServerParameters &parameters)
+			: _acceptor(_io_context,
+			            tcp::endpoint(tcp::v6(), parameters.getPort())),
 			  _game_room(parameters, game,
 			             boost::asio::steady_timer(_io_context,
 			                                       boost::asio::chrono::milliseconds(
-					                                       parameters.turn_duration))) {}
+					                                       parameters.getTurnDuration()))) {}
 
 	void run();
 

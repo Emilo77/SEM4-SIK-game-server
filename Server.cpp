@@ -32,11 +32,10 @@ void Server::do_accept() {
 				});
 }
 
-
 int main(int argc, char *argv[]) {
-	ServerParametersParser parameters(argc, argv);
+	ServerParametersParser parser(argc, argv);
+	ServerParameters parameters = parser.check_parameters();
 	Game game(parameters);
-
 	Server server(game, parameters);
 	server.run();
 }

@@ -17,10 +17,11 @@ SET(USED_LIBS ${Boost_SYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 add_executable(robots-server
         Buffer.cpp
-        ServerParameters.cpp
+        ServerParametersParser.cpp
         Server.cpp
         Connection.cpp
         Game.cpp
-        GameRoom.cpp)
+        GameRoom.cpp
+        ServerParameters.h)
 
 TARGET_LINK_LIBRARIES(robots-server ${USED_LIBS})
